@@ -81,7 +81,7 @@ export function ScoreCard({ scores }: ScoreCardProps) {
                   r="52"
                   fill="none"
                   strokeWidth="8"
-                  className="stroke-muted/40"
+                  className="stroke-muted"
                 />
                 
                 {/* Progress arc */}
@@ -92,7 +92,7 @@ export function ScoreCard({ scores }: ScoreCardProps) {
                   fill="none"
                   strokeWidth="8"
                   strokeLinecap="round"
-                  className="stroke-foreground"
+                  className="stroke-primary"
                   strokeDasharray={circumference}
                   initial={{ strokeDashoffset: circumference }}
                   animate={{
@@ -115,7 +115,7 @@ export function ScoreCard({ scores }: ScoreCardProps) {
                       y1={60 + innerRadius * Math.sin(radians)}
                       x2={60 + outerRadius * Math.cos(radians)}
                       y2={60 + outerRadius * Math.sin(radians)}
-                      className="stroke-muted-foreground/30"
+                      className="stroke-primary"
                       strokeWidth="1.5"
                     />
                   );

@@ -262,7 +262,7 @@ function FileTreeSkeleton() {
       </CardHeader>
 
       <CardContent className="flex-1 p-3 space-y-1">
-        {[0, 1, 1, 2, 2, 2, 1, 2, 0, 1, 1, 2].map((level, i) => (
+        {[0, 1, 1, 2, 2, 2, 1, 2, 0, 1, 1].map((level, i) => (
           <div
             key={i}
             className="flex items-center gap-2 py-1.5"
@@ -274,10 +274,6 @@ function FileTreeSkeleton() {
         ))}
       </CardContent>
 
-      <div className="shrink-0 px-4 py-2.5 border-t border-border/50 bg-muted/20 flex justify-between">
-        <Skeleton className="h-3 w-24" />
-        <Skeleton className="h-3 w-16" />
-      </div>
     </Card>
   );
 }

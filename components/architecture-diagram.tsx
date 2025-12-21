@@ -160,7 +160,7 @@ export function ArchitectureDiagram({ components }: ArchitectureDiagramProps) {
                         </h4>
 
                         {/* Description */}
-                        <p className="text-xs text-muted-foreground line-clamp-2 mb-2.5 min-h-10">
+                        <p className="text-xs text-muted-foreground mb-2.5 min-h-10">
                           {component.description}
                         </p>
 
