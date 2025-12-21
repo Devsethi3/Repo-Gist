@@ -185,9 +185,9 @@ export function ScoreCard({ scores }: ScoreCardProps) {
                   <motion.div
                     className={cn(
                       "absolute inset-y-0 left-0 rounded-full",
-                      level === "high" && "bg-foreground",
-                      level === "medium" && "bg-foreground/70",
-                      level === "low" && "bg-foreground/50"
+                      level === "high" && "bg-primary",
+                      level === "medium" && "bg-primary/70",
+                      level === "low" && "bg-primary/50"
                     )}
                     initial={{ width: 0 }}
                     animate={{ width: `${score}%` }}
