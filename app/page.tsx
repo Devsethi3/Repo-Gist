@@ -1,10 +1,10 @@
-"use client"
+"use client";
 import { RepoAnalyzer } from "@/components/repo-analyzer";
 import { Header } from "@/components/header";
 import { motion } from "framer-motion";
 
 export default function Home() {
-   const bars = [
+  const bars = [
     { height: "65%", opacity: 0.3 },
     { height: "50%", opacity: 0.4 },
     { height: "40%", opacity: 0.5 },
@@ -27,24 +27,23 @@ export default function Home() {
       {/* Bar */}
 
       <div className="absolute inset-0 flex items-end w-full h-full gap-0 justify-between pb-0 pointer-events-none">
-          {bars.map((bar, index) => (
-            <motion.div
-              key={index}
-              className="w-full rounded-t-sm bg-linear-to-t from-yellow-400 via-yellow-400/60 dark:from-yellow-600 dark:via-yellow-600/60 to-transparent"
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: bar.height, opacity: 1 }}
-              transition={{
-                duration: 0.8,
-                delay: Math.abs(index - Math.floor(bars.length / 2)) * 0.1,
-                ease: "easeOut",
-              }}
-            />
-          ))}
-        </div>
+        {bars.map((bar, index) => (
+          <motion.div
+            key={index}
+            className="w-full rounded-t-sm bg-linear-to-t from-yellow-400 via-yellow-400/60 dark:from-yellow-600 dark:via-yellow-600/60 to-transparent"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: bar.height, opacity: 1 }}
+            transition={{
+              duration: 0.8,
+              delay: Math.abs(index - Math.floor(bars.length / 2)) * 0.1,
+              ease: "easeOut",
+            }}
+          />
+        ))}
+      </div>
 
-        {/* Gradient Overlay to fade top and bottom */}
-        <div className="absolute inset-0 bg-linear-to-b from-white via-transparent to-white/60 dark:from-zinc-950 dark:via-transparent dark:to-zinc-950/30 pointer-events-none" />
-
+      {/* Gradient Overlay to fade top and bottom */}
+      <div className="absolute inset-0 bg-linear-to-b from-white via-transparent to-white/60 dark:from-zinc-950 dark:via-transparent dark:to-zinc-950/30 pointer-events-none" />
 
       {/* Hero Section */}
       <section className="relative flex-1">

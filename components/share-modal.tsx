@@ -140,7 +140,9 @@ export function ShareModal({ open, onOpenChange, result }: ShareModalProps) {
                   <Share2 className="w-4 h-4 text-primary" />
                 </div>
                 <div>
-                  <DrawerTitle className="text-base">Share Analysis</DrawerTitle>
+                  <DrawerTitle className="text-base">
+                    Share Analysis
+                  </DrawerTitle>
                   <p className="text-xs text-muted-foreground mt-0.5">
                     {shareData.repoFullName}
                   </p>
@@ -338,7 +340,7 @@ export function ShareModal({ open, onOpenChange, result }: ShareModalProps) {
 
             {/* Card Preview */}
             <ScrollArea className="flex-1">
-              <div className="flex items-center justify-center p-6 min-h-[400px]">
+              <div className="flex items-center justify-center p-6 min-h-100">
                 <AnimatePresence mode="wait">
                   <motion.div
                     key={variant}
@@ -459,7 +461,7 @@ export function ShareModal({ open, onOpenChange, result }: ShareModalProps) {
                 {/* Tips Section */}
                 <div className="p-3 rounded-lg bg-muted/50 border border-border/50">
                   <div className="flex items-start gap-2">
-                    <Sparkles className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                    <Sparkles className="w-4 h-4 text-primary mt-0.5 shrink-0" />
                     <div className="min-w-0">
                       <p className="text-xs font-medium text-foreground mb-1.5">
                         Pro Tips
@@ -514,7 +516,7 @@ function ActionSection({ icon: Icon, title, children }: ActionSectionProps) {
 function TipItem({ text }: { text: string }) {
   return (
     <li className="flex items-start gap-1.5">
-      <span className="w-1 h-1 rounded-full bg-primary mt-1.5 flex-shrink-0" />
+      <span className="w-1 h-1 rounded-full bg-primary mt-1.5 shrink-0" />
       <span>{text}</span>
     </li>
   );
