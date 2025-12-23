@@ -161,7 +161,7 @@ const VideoDemo = () => {
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.2 }}
-                    className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent pointer-events-none"
+                    className="absolute inset-0 bg-linear-to-t from-background/80 via-transparent to-transparent pointer-events-none"
                   >
                     {/* Bottom Controls */}
                     <div className="absolute bottom-0 left-0 right-0 p-4 pointer-events-auto">
@@ -227,7 +227,7 @@ const VideoDemo = () => {
           </div>
 
           {/* Reflection effect */}
-          <div className="absolute -bottom-12 left-1/2 -translate-x-1/2 w-3/4 h-12 bg-gradient-to-b from-primary/10 to-transparent blur-2xl opacity-50" />
+          <div className="absolute -bottom-12 left-1/2 -translate-x-1/2 w-3/4 h-12 bg-linear-to-b from-primary/10 to-transparent blur-2xl opacity-50" />
         </motion.div>
 
         {/* Optional: Caption below video */}
