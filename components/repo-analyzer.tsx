@@ -253,7 +253,7 @@ export function RepoAnalyzer() {
                     {/* Tab Content */}
                     <TabsContent
                       value="refactors"
-                      className="mt-4 sm:mt-6 focus-visible:outline-none"
+                      className="mt-4 sm:mt-6 focus-visible:outline-none "
                     >
                       <motion.div
                         initial={{ opacity: 0 }}

@@ -242,7 +242,7 @@ export function RefactorsPanel({ refactors = [] }: RefactorsPanelProps) {
   );
 
   return (
-    <Card className="h-full">
+    <Card className="h-full bg-background">
       <CardHeader className="p-3 sm:pb-3 sm:p-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <CardTitle className="flex items-center gap-2 text-base sm:text-lg">

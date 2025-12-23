@@ -91,7 +91,7 @@ function AutomationItem({
     >
       <div
         className={cn(
-          "rounded-xl border bg-card transition-all duration-200 overflow-hidden",
+          "rounded-xl border transition-all duration-200 overflow-hidden",
           isOpen && "border-primary/30"
         )}
       >
@@ -242,7 +242,7 @@ export function AutomationsPanel({
   };
 
   return (
-    <Card className="h-full flex flex-col">
+    <Card className="h-full flex flex-col bg-background">
       <CardHeader className="pb-3 px-4 sm:px-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
