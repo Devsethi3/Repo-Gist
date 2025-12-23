@@ -71,7 +71,7 @@ function RefactorItem({
     >
       <div
         className={cn(
-          "rounded-xl border bg-card transition-all duration-200 overflow-hidden",
+          "rounded-xl border bg-background transition-all duration-200 overflow-hidden",
           isOpen && "border-primary/30"
         )}
       >

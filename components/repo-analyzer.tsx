@@ -25,6 +25,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
+import About from "./about";
 
 // Animation variants
 const fadeIn = {
@@ -228,10 +229,7 @@ export function RepoAnalyzer() {
                     {/* Tab Navigation */}
                     <ScrollArea className="w-full pb-1">
                       <TabsList
-                        className={cn(
-                          "inline-flex h-10 sm:h-11 p-1 gap-1",
-                          "bg-muted/50 rounded-lg"
-                        )}
+                        className={cn("inline-flex h-10 sm:h-11 p-1 gap-1")}
                       >
                         <TabTriggerItem
                           value="refactors"
@@ -343,7 +341,7 @@ export function RepoAnalyzer() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
             >
-              Features
+              <About />
             </motion.div>
           )}
         </AnimatePresence>
@@ -367,7 +365,7 @@ function SectionHeader({
           <Icon className="w-4 h-4 text-primary" />
         </div>
       )}
-      <h2 className="text-base sm:text-lg font-semibold text-foreground">
+      <h2 className="text-xl tracking-wider font-medium instrument-serif text-foreground">
         {title}
       </h2>
       <div className="flex-1 h-px bg-border" />

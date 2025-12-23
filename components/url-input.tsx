@@ -48,7 +48,7 @@ export function UrlInput({ onAnalyze, isLoading }: UrlInputProps) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
-      className="w-full max-w-2xl mx-auto"
+      className="w-full max-w-2xl mx-auto jetbrains-mono"
     >
       <form onSubmit={handleSubmit} className="space-y-3">
         {/* Main Input Container */}
@@ -82,7 +82,7 @@ export function UrlInput({ onAnalyze, isLoading }: UrlInputProps) {
               disabled={isLoading}
               className={cn(
                 "flex-1 border-0 bg-transparent border-none shadow-none text-base focus-visible:ring-0 focus-visible:ring-offset-0 h-11 outline-none",
-                "placeholder:text-muted-foreground/40 font-mono text-sm sm:text-base"
+                "placeholder:text-muted-foreground/40 text-sm sm:text-base"
               )}
             />
           </div>

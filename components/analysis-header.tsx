@@ -22,6 +22,7 @@ import {
   Rocket,
   Target,
   Layers,
+  Search,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -416,7 +417,7 @@ export function AnalysisHeader({
           {/* AI Summary */}
           {summary && (
             <InfoSection
-              icon={Sparkles}
+              icon={Search}
               title="AI Summary"
               description="Intelligent analysis of this repository"
               accentColor="primary"
@@ -585,16 +586,16 @@ function CommandStep({ step, command }: CommandStepProps) {
   };
 
   return (
-    <div className="group flex items-center gap-2 p-2 rounded-md bg-zinc-900/50 border border-zinc-800/50 hover:border-primary/20 transition-colors">
+    <div className="group flex items-center gap-2 p-2 rounded-md bg-primary/10 border hover:border-primary/20 transition-colors">
       <span className="flex items-center justify-center w-5 h-5 rounded text-[10px] font-medium bg-primary/10 text-primary shrink-0">
         {step}
       </span>
-      <code className="flex-1 text-xs sm:text-sm font-mono text-zinc-300 truncate">
+      <code className="flex-1 text-xs sm:text-sm jetbrains-mono truncate">
         {command}
       </code>
       <Button
-        variant="ghost"
-        size="sm"
+        variant="outline"
+        size="icon"
         className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-primary/10"
         onClick={handleCopy}
       >
@@ -620,7 +621,7 @@ function FolderCard({ name, description }: FolderCardProps) {
         <FolderTree className="w-3 h-3 text-orange-500" />
       </div>
       <div className="min-w-0">
-        <code className="text-xs font-medium text-foreground font-mono">
+        <code className="text-xs font-medium text-foreground">
           {name}
         </code>
         <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-2">

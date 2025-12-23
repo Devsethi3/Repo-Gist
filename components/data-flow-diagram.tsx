@@ -51,7 +51,7 @@ export function DataFlowDiagram({ nodes, edges }: DataFlowDiagramProps) {
 
   if (nodes.length === 0) {
     return (
-      <Card className="border-border/60">
+      <Card className="border-border/60 bg-background">
         <CardContent className="py-16">
           <div className="flex flex-col items-center justify-center text-center">
             <div className="w-12 h-12 rounded-xl bg-muted/50 flex items-center justify-center mb-4">

@@ -92,7 +92,7 @@ export function ArchitectureDiagram({ components }: ArchitectureDiagramProps) {
   }
 
   return (
-    <Card className="border-border/60">
+    <Card className="border-border/60 bg-background">
       {/* Header */}
       <CardHeader className="p-4 border-b border-border/50">
         <div className="flex items-center justify-between">

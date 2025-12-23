@@ -135,12 +135,12 @@ export function ShareModal({ open, onOpenChange, result }: ShareModalProps) {
         <DrawerContent className="max-h-[90vh]">
           <DrawerHeader className="pb-2">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
+              <div className="flex items-start gap-2">
                 <div className="p-1.5 rounded-lg bg-primary/10">
                   <Share2 className="w-4 h-4 text-primary" />
                 </div>
                 <div>
-                  <DrawerTitle className="text-base">
+                  <DrawerTitle className="text-base text-left instrument-serif font-normal tracking-wide">
                     Share Analysis
                   </DrawerTitle>
                   <p className="text-xs text-muted-foreground mt-0.5">
@@ -303,7 +303,7 @@ export function ShareModal({ open, onOpenChange, result }: ShareModalProps) {
               <Share2 className="w-5 h-5 text-primary" />
             </div>
             <div className="min-w-0 flex-1">
-              <DialogTitle className="text-lg font-semibold truncate">
+              <DialogTitle className="text-lg instrument-serif tracking-wider font-normal truncate">
                 Share Your Analysis
               </DialogTitle>
               <p className="text-sm text-muted-foreground mt-0.5 truncate">

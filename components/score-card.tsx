@@ -46,7 +46,7 @@ export function ScoreCard({ scores }: ScoreCardProps) {
   const circumference = 2 * Math.PI * 52;
 
   return (
-    <Card className="h-full border-border/60 overflow-hidden">
+    <Card className="h-full border-border/60 bg-background overflow-hidden">
       {/* Header */}
       <CardHeader className="pb-0">
         <CardTitle className="flex items-center justify-between">

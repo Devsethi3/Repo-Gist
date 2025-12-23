@@ -5,8 +5,6 @@ import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import ThemeToggle from "./ui/theme-toggle";
-import RepoGistLogo from "./icons/repogist-logo";
-import Link from "next/link";
 
 export const HeroHeader = () => {
   const [menuState, setMenuState] = useState(false);
@@ -28,21 +26,16 @@ export const HeroHeader = () => {
       >
         <div
           className={cn(
-            "mx-auto mt-2 max-w-6xl px-6 bg-background/50 backdrop-blur-lg rounded-2xl transition-all duration-300 lg:px-12 border",
-            isScrolled && "bg-background/50 max-w-4xl lg:px-5"
+            "mx-auto mt-2 max-w-6xl px-6 transition-all duration-300 lg:px-12",
+            isScrolled &&
+              "bg-background/50 max-w-4xl rounded-2xl border backdrop-blur-lg lg:px-5"
           )}
         >
           <div className="relative flex flex-wrap items-center justify-between gap-6 py-3 lg:gap-0 lg:py-4">
             <div className="flex w-full justify-between lg:w-auto">
-              <Link href="/" className="flex items-center gap-2.5 group w-fit">
-                <div className="relative">
-                  <div className="absolute inset-0 bg-primary/20 blur-lg rounded-full group-hover:bg-primary/30 transition-colors" />
-                  <RepoGistLogo className="relative size-8 text-primary" />
-                </div>
-                <h1 className="instrument-serif text-2xl text-foreground">
-                  RepoGist
-                </h1>
-              </Link>
+              <h1 className="instrument-serif lg:text-3xl md:text-2xl text-xl">
+                RepoGist
+              </h1>
               <div className="flex items-center gap-2">
                 <div className="md:hidden block">
                   <ThemeToggle />
