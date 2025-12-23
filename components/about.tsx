@@ -104,7 +104,7 @@ const VideoDemo = () => {
               
               {/* URL Bar */}
               <div className="mx-auto bg-background/80 border border-border rounded-md px-3 py-1.5 text-[10px] sm:text-xs text-muted-foreground jetbrains-mono flex items-center gap-2 max-w-xs sm:max-w-md">
-                <span className="w-2 h-2 rounded-full bg-primary/60 animate-pulse flex-shrink-0" />
+                <span className="w-2 h-2 rounded-full bg-primary/60 animate-pulse shrink-0" />
                 <span className="truncate">
                   <span className="hidden sm:inline text-muted-foreground/50">https://</span>
                   repo-analyzer.com/demo
@@ -112,7 +112,7 @@ const VideoDemo = () => {
               </div>
 
               {/* Right side placeholder for symmetry */}
-              <div className="flex gap-2 w-[52px]" />
+              <div className="flex gap-2 w-13" />
             </div>
 
             {/* Video Player */}
