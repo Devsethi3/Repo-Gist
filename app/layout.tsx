@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { AnalysisProvider } from "@/context/analysis-context";
 import "./fonts.css";
 import { ThemeProvider } from "@/context/theme-provider";
+import { FigmaCursor } from "@/components/ui/figma-cursor";
 
 // Geist Sans
 const geistSans = Geist({
@@ -64,6 +65,7 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
+            <FigmaCursor />
             {children}
           </ThemeProvider>
         </AnalysisProvider>
