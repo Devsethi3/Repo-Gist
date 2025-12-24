@@ -31,7 +31,14 @@ yarn-error.log*
 .pnpm-debug.log*
 
 # env files (can opt-in for committing if needed)
-.env*
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# API keys
+*.pem
+*.key
 
 # vercel
 .vercel
