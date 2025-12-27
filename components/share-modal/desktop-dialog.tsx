@@ -2,17 +2,6 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Share2,
-  Download,
-  Copy,
-  Check,
-  Twitter,
-  Linkedin,
-  Link2,
-  Loader2,
-  ImageIcon,
-} from "lucide-react";
-import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -26,6 +15,18 @@ import { cn } from "@/lib/utils";
 import { DesktopDialogProps } from "./types";
 import { VARIANTS, VARIANT_SCALE } from "./constants";
 import { ActionSection } from "./action-section";
+import { HugeiconsIcon } from "@hugeicons/react";
+import {
+  Share01Icon,
+  Download01Icon,
+  Copy01Icon,
+  Tick01Icon,
+  NewTwitterIcon,
+  Linkedin01Icon,
+  Link01Icon,
+  Loading01Icon,
+  Image01Icon,
+} from "@hugeicons/core-free-icons";
 
 export function DesktopDialog({
   open,
@@ -45,12 +46,15 @@ export function DesktopDialog({
 }: DesktopDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="p-0 gap-0 overflow-hidden sm:max-w-3xl lg:max-w-5xl max-h-[85vh]">
+      <DialogContent className="p-0 gap-0 overflow-hidden jetbrains-mono sm:max-w-3xl lg:max-w-5xl max-h-[85vh]">
         {/* Header */}
         <DialogHeader className="px-6 py-4 border-b border-border bg-muted/30 shrink-0">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-xl bg-primary/10 shrink-0">
-              <Share2 className="w-5 h-5 text-primary" />
+              <HugeiconsIcon
+                icon={Share01Icon}
+                className="w-5 h-5 text-primary"
+              />
             </div>
             <div className="min-w-0 flex-1">
               <DialogTitle className="text-lg instrument-serif tracking-wider font-normal truncate">
@@ -119,7 +123,7 @@ export function DesktopDialog({
             <ScrollArea className="h-full">
               <div className="p-5 space-y-5">
                 {/* Download Section */}
-                <ActionSection icon={ImageIcon} title="Download Image">
+                <ActionSection icon={Image01Icon} title="Download Image">
                   <Button
                     onClick={handleDownload}
                     disabled={downloading}
@@ -130,17 +134,26 @@ export function DesktopDialog({
                   >
                     {downloading ? (
                       <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <HugeiconsIcon
+                          icon={Loading01Icon}
+                          className="w-4 h-4 animate-spin"
+                        />
                         Generating...
                       </>
                     ) : downloadSuccess ? (
                       <>
-                        <Check className="w-4 h-4" />
+                        <HugeiconsIcon
+                          icon={Tick01Icon}
+                          className="w-4 h-4"
+                        />
                         Downloaded!
                       </>
                     ) : (
                       <>
-                        <Download className="w-4 h-4" />
+                        <HugeiconsIcon
+                          icon={Download01Icon}
+                          className="w-4 h-4"
+                        />
                         Download PNG
                       </>
                     )}
@@ -153,7 +166,7 @@ export function DesktopDialog({
                 <div className="h-px bg-border" />
 
                 {/* Copy Link Section */}
-                <ActionSection icon={Link2} title="Share Link">
+                <ActionSection icon={Link01Icon} title="Share Link">
                   <Button
                     onClick={handleCopyLink}
                     variant="outline"
@@ -164,12 +177,15 @@ export function DesktopDialog({
                   >
                     {copied ? (
                       <>
-                        <Check className="w-4 h-4" />
+                        <HugeiconsIcon
+                          icon={Tick01Icon}
+                          className="w-4 h-4"
+                        />
                         Copied!
                       </>
                     ) : (
                       <>
-                        <Copy className="w-4 h-4" />
+                        <HugeiconsIcon icon={Copy01Icon} className="w-4 h-4" />
                         Copy Link
                       </>
                     )}
@@ -179,20 +195,20 @@ export function DesktopDialog({
                 <div className="h-px bg-border" />
 
                 {/* Social Sharing Section */}
-                <ActionSection icon={Share2} title="Share on Social">
+                <ActionSection icon={Share01Icon} title="Share on Social">
                   <div className="grid grid-cols-2 gap-2">
-                    <Button
-                      onClick={handleTwitterShare}
-                      variant="outline"
-                    >
-                      <Twitter className="w-4 h-4" />
+                    <Button onClick={handleTwitterShare} variant="outline">
+                      <HugeiconsIcon
+                        icon={NewTwitterIcon}
+                        className="w-4 h-4"
+                      />
                       Twitter
                     </Button>
-                    <Button
-                      onClick={handleLinkedInShare}
-                      variant="outline"
-                    >
-                      <Linkedin className="w-4 h-4" />
+                    <Button onClick={handleLinkedInShare} variant="outline">
+                      <HugeiconsIcon
+                        icon={Linkedin01Icon}
+                        className="w-4 h-4"
+                      />
                       LinkedIn
                     </Button>
                   </div>

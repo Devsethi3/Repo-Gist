@@ -1,11 +1,12 @@
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { HugeiconsIcon } from "@hugeicons/react";
 import { InfoSectionProps } from "./types";
 import { ACCENT_COLOR_CLASSES } from "./constants";
 
 export function InfoSection({
-  icon: Icon,
+  icon,
   title,
   description,
   accentColor = "primary",
@@ -25,7 +26,10 @@ export function InfoSection({
       {/* Header */}
       <div className="flex items-center gap-2 mb-3">
         <div className={cn("p-1.5 rounded-md", colors.iconBg)}>
-          <Icon className={cn("w-3.5 h-3.5", colors.iconText)} />
+          <HugeiconsIcon
+            icon={icon}
+            className={cn("w-3.5 h-3.5", colors.iconText)}
+          />
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">

@@ -1,27 +1,6 @@
 "use client";
 
 import { useState, useMemo, useCallback } from "react";
-import {
-  Star,
-  GitFork,
-  Eye,
-  ExternalLink,
-  Code,
-  Scale,
-  CircleDot,
-  Copy,
-  Check,
-  GitBranch,
-  Clock,
-  Share2,
-  Users,
-  Terminal,
-  FolderTree,
-  Rocket,
-  Target,
-  Layers,
-  Search,
-} from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -39,7 +18,32 @@ import { TechBadge } from "./tech-badge";
 import { CommandStep } from "./command-step";
 import { FolderCard } from "./folder-card";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { GithubIcon } from "@hugeicons/core-free-icons";
+import {
+  GithubIcon,
+  StarIcon,
+  GitForkIcon,
+  ViewIcon,
+  FolderLinksIcon,
+  SourceCodeIcon,
+  LicenseIcon,
+  RecordIcon,
+  Copy01Icon,
+  CheckmarkCircle01Icon,
+  GitBranchIcon,
+  Clock01Icon,
+  Share01Icon,
+  UserMultiple02Icon,
+  ComputerTerminal01Icon,
+  Folder01Icon,
+  RocketIcon,
+  Target01Icon,
+  Layers01Icon,
+  Search01Icon,
+  LaptopIssueIcon,
+  Tick01Icon,
+  SentIcon,
+  Github01Icon,
+} from "@hugeicons/core-free-icons";
 
 export function AnalysisHeader({
   metadata,
@@ -71,21 +75,26 @@ export function AnalysisHeader({
 
   const stats: StatItem[] = useMemo(
     () => [
-      { icon: Star, value: metadata.stars, label: "Stars", highlight: true },
       {
-        icon: GitFork,
+        icon: StarIcon,
+        value: metadata.stars,
+        label: "Stars",
+        highlight: true,
+      },
+      {
+        icon: GitForkIcon,
         value: metadata.forks,
         label: "Forks",
         highlight: false,
       },
       {
-        icon: Eye,
+        icon: ViewIcon,
         value: metadata.watchers,
         label: "Watchers",
         highlight: false,
       },
       {
-        icon: CircleDot,
+        icon: LaptopIssueIcon,
         value: metadata.openIssues,
         label: "Issues",
         highlight: false,
@@ -103,10 +112,6 @@ export function AnalysisHeader({
           <div className="flex gap-3 sm:gap-4">
             {/* Avatar with primary accent ring */}
             <div className="relative shrink-0 flex items-start justify-center">
-              {/* <div
-                aria-hidden
-                className="absolute inset-0 rounded-xl bg-primary/30 blur-md scale-110 md:hidden block"
-              /> */}
               <Image
                 src={metadata.owner.avatarUrl}
                 alt={metadata.owner.login}
@@ -155,29 +160,28 @@ export function AnalysisHeader({
             {/* Desktop Actions */}
             <div className="hidden sm:flex items-start gap-1.5 shrink-0">
               <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 w-8 p-0 hover:bg-primary/10 hover:text-primary"
+                variant="outline"
                 onClick={() => setShareModalOpen(true)}
               >
-                <Share2 className="w-4 h-4" />
+                <HugeiconsIcon icon={SentIcon} className="w-4 h-4" />
+                Share
               </Button>
               <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 w-8 p-0 hover:bg-primary/10 hover:text-primary"
+                variant="outline"
+                size="icon"
                 onClick={handleCopyUrl}
               >
                 {copied ? (
-                  <Check className="w-4 h-4 text-primary" />
+                  <HugeiconsIcon
+                    icon={Tick01Icon}
+                    className="w-4 h-4 text-primary"
+                  />
                 ) : (
-                  <Copy className="w-4 h-4" />
+                  <HugeiconsIcon icon={Copy01Icon} className="w-4 h-4" />
                 )}
               </Button>
               <Button
                 variant="outline"
-                size="sm"
-                className="h-8 hover:bg-primary/10 hover:text-primary hover:border-primary/30"
                 asChild
               >
                 <Link
@@ -185,7 +189,10 @@ export function AnalysisHeader({
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  <ExternalLink className="w-3.5 h-3.5 mr-1.5" />
+                  <HugeiconsIcon
+                    icon={GithubIcon}
+                    className="w-3.5 h-3.5 mr-1.5"
+                  />
                   GitHub
                 </Link>
               </Button>
@@ -205,7 +212,7 @@ export function AnalysisHeader({
               <div className="flex items-center gap-1.5 pb-1">
                 {metadata.language && (
                   <Badge className="text-[10px] sm:text-xs shrink-0 gap-1 bg-primary/10 text-primary border-primary/20 hover:bg-primary/20">
-                    <Code className="w-3 h-3" />
+                    <HugeiconsIcon icon={SourceCodeIcon} className="w-3 h-3" />
                     {metadata.language}
                   </Badge>
                 )}
@@ -214,7 +221,7 @@ export function AnalysisHeader({
                     variant="secondary"
                     className="text-[10px] sm:text-xs shrink-0 gap-1"
                   >
-                    <Scale className="w-3 h-3" />
+                    <HugeiconsIcon icon={LicenseIcon} className="w-3 h-3" />
                     {metadata.license}
                   </Badge>
                 )}
@@ -223,7 +230,7 @@ export function AnalysisHeader({
                     variant="secondary"
                     className="text-[10px] sm:text-xs shrink-0 gap-1"
                   >
-                    <GitBranch className="w-3 h-3" />
+                    <HugeiconsIcon icon={GitBranchIcon} className="w-3 h-3" />
                     {metadata.defaultBranch}
                   </Badge>
                 )}
@@ -231,7 +238,7 @@ export function AnalysisHeader({
                   variant="secondary"
                   className="text-[10px] sm:text-xs shrink-0 gap-1"
                 >
-                  <Clock className="w-3 h-3" />
+                  <HugeiconsIcon icon={Clock01Icon} className="w-3 h-3" />
                   {formatDate(metadata.pushedAt)}
                 </Badge>
               </div>
@@ -241,7 +248,7 @@ export function AnalysisHeader({
 
           {/* Stats Grid */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-4">
-            {stats.map(({ icon: Icon, value, label, highlight }) => (
+            {stats.map(({ icon, value, label, highlight }) => (
               <div
                 key={label}
                 className={cn(
@@ -259,7 +266,8 @@ export function AnalysisHeader({
                       : "bg-muted/60"
                   )}
                 >
-                  <Icon
+                  <HugeiconsIcon
+                    icon={icon}
                     className={cn(
                       "w-3.5 h-3.5 sm:w-4 sm:h-4",
                       highlight ? "text-primary" : "text-muted-foreground"
@@ -291,7 +299,10 @@ export function AnalysisHeader({
               className="flex-1 h-9 hover:bg-primary/10 hover:text-primary hover:border-primary/30"
               onClick={() => setShareModalOpen(true)}
             >
-              <Share2 className="w-3.5 h-3.5 mr-1.5" />
+              <HugeiconsIcon
+                icon={SentIcon}
+                className="w-3.5 h-3.5 mr-1.5"
+              />
               Share
             </Button>
             <Button
@@ -301,9 +312,12 @@ export function AnalysisHeader({
               onClick={handleCopyUrl}
             >
               {copied ? (
-                <Check className="w-3.5 h-3.5 text-primary" />
+                <HugeiconsIcon
+                  icon={Tick01Icon}
+                  className="w-3.5 h-3.5 text-primary"
+                />
               ) : (
-                <Copy className="w-3.5 h-3.5" />
+                <HugeiconsIcon icon={Copy01Icon} className="w-3.5 h-3.5" />
               )}
             </Button>
             <Button
@@ -316,7 +330,10 @@ export function AnalysisHeader({
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                <ExternalLink className="w-3.5 h-3.5 mr-1.5" />
+                <HugeiconsIcon
+                  icon={FolderLinksIcon}
+                  className="w-3.5 h-3.5 mr-1.5"
+                />
                 GitHub
               </Link>
             </Button>
@@ -324,10 +341,10 @@ export function AnalysisHeader({
         </div>
 
         {/* Extended Information Section */}
-        <CardContent className="p-4 sm:p-6 pt-0 space-y-4 border-t border-border/50">
+        <CardContent className="p-4 sm:p-6 pt-4 space-y-4 border-t border-border/50">
           {/* What This Repo Does */}
           <InfoSection
-            icon={Rocket}
+            icon={RocketIcon}
             title="What This Repo Does"
             description="A plain English explanation of this project"
             accentColor="primary"
@@ -339,7 +356,7 @@ export function AnalysisHeader({
 
           {/* Who It's For */}
           <InfoSection
-            icon={Users}
+            icon={UserMultiple02Icon}
             title="Who It's For"
             description="The target audience for this project"
             accentColor="blue"
@@ -352,7 +369,7 @@ export function AnalysisHeader({
           {/* Tech Stack */}
           {techStack && techStack.length > 0 && (
             <InfoSection
-              icon={Layers}
+              icon={Layers01Icon}
               title="Tech Stack"
               description="Technologies and frameworks used"
               accentColor="purple"
@@ -368,7 +385,7 @@ export function AnalysisHeader({
 
           {/* How to Run Locally */}
           <InfoSection
-            icon={Terminal}
+            icon={ComputerTerminal01Icon}
             title="How to Run Locally"
             description="Quick start commands to get this running"
             accentColor="green"
@@ -383,7 +400,7 @@ export function AnalysisHeader({
           {/* Key Folders Explained */}
           {extendedAnalysis.keyFolders.length > 0 && (
             <InfoSection
-              icon={FolderTree}
+              icon={Folder01Icon}
               title="Key Folders Explained"
               description="Understanding the project structure"
               accentColor="orange"
@@ -403,7 +420,7 @@ export function AnalysisHeader({
           {/* Topics */}
           {metadata.topics?.length > 0 && (
             <InfoSection
-              icon={Target}
+              icon={Target01Icon}
               title="Topics"
               description="Related categories and tags"
               accentColor="cyan"
@@ -439,7 +456,7 @@ export function AnalysisHeader({
           {/* AI Summary */}
           {summary && (
             <InfoSection
-              icon={Search}
+              icon={Search01Icon}
               title="AI Summary"
               description="Intelligent analysis of this repository"
               accentColor="primary"
@@ -462,4 +479,3 @@ export function AnalysisHeader({
     </>
   );
 }
-

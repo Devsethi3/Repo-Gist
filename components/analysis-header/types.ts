@@ -1,4 +1,4 @@
-import { LucideIcon } from "lucide-react";
+import { IconSvgElement } from "@hugeicons/react";
 import { RepoMetadata, AnalysisResult } from "@/lib/types";
 
 export interface AnalysisHeaderProps {
@@ -16,7 +16,7 @@ export interface ExtendedAnalysis {
 }
 
 export interface InfoSectionProps {
-  icon: LucideIcon;
+  icon: IconSvgElement;
   title: string;
   description: string;
   accentColor?: "primary" | "blue" | "green" | "purple" | "orange" | "cyan";
@@ -41,7 +41,7 @@ export interface FolderCardProps {
 }
 
 export interface StatItem {
-  icon: LucideIcon;
+  icon: IconSvgElement;
   value: number;
   label: string;
   highlight: boolean;

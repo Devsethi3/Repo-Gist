@@ -49,32 +49,8 @@ const VideoDemo = () => {
 
   return (
     <section className="py-24 relative overflow-hidden">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        
-        {/* Section Header */}
-        <div className="text-center mb-12">
-          
-          <motion.h2 
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5, delay: 0.05 }}
-            className="instrument-serif text-3xl md:text-5xl text-foreground mb-4"
-          >
-            See it in <span className="text-primary">Action</span>
-          </motion.h2>
-          
-          <motion.p 
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className="text-muted-foreground jetbrains-mono text-sm max-w-lg mx-auto"
-          >
-            Watch how we parse complexity into clarity in seconds.
-          </motion.p>
-        </div>
-
+      <div className="container mx-auto">
+ 
         {/* Video Container */}
         <motion.div
           initial={{ opacity: 0, y: 40, scale: 0.95 }}

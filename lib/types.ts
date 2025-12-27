@@ -8,7 +8,6 @@ export interface FileNode {
   extension?: string;
 }
 
-// Add this new interface
 export interface FileStats {
   totalFiles: number;
   totalDirectories: number;

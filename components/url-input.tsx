@@ -14,6 +14,7 @@ import {
   AlertCircleIcon,
   Loading02Icon,
   Search01Icon,
+  Loading03Icon,
 } from "@hugeicons/core-free-icons";
 
 interface UrlInputProps {
@@ -107,7 +108,7 @@ export function UrlInput({ onAnalyze, isLoading }: UrlInputProps) {
             {isLoading ? (
               <div className="flex items-center gap-2">
                 <HugeiconsIcon
-                  icon={Loading02Icon}
+                  icon={Loading03Icon}
                   className="w-4 h-4 animate-spin"
                   strokeWidth={1.5}
                 />
