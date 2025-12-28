@@ -1,189 +1,245 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useSyncExternalStore } from "react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
-export const FigmaCursor = () => {
-  const [position, setPosition] = useState({ x: 0, y: 0 });
-  const [hidden, setHidden] = useState(false);
-  const [clicked, setClicked] = useState(false);
-  const [isPointer, setIsPointer] = useState(false);
-  const [isText, setIsText] = useState(false);
-  const [isTouchDevice, setIsTouchDevice] = useState(false);
+// External store for touch device detection
+function subscribeTouchDevice(callback: () => void): () => void {
+  if (typeof window === "undefined") return () => {};
 
-  useEffect(() => {
-    const checkTouchDevice = () => {
-      const hasTouchScreen =
-        "ontouchstart" in window ||
-        navigator.maxTouchPoints > 0 ||
-        // @ts-ignore
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        navigator.msMaxTouchPoints > 0;
+  const mediaQuery = window.matchMedia("(max-width: 768px)");
+  const pointerQuery = window.matchMedia("(pointer: coarse)");
 
-      const isSmallScreen = window.matchMedia("(max-width: 768px)").matches;
-      const hasCoarsePointer = window.matchMedia("(pointer: coarse)").matches;
+  mediaQuery.addEventListener("change", callback);
+  pointerQuery.addEventListener("change", callback);
 
-      return hasTouchScreen || isSmallScreen || hasCoarsePointer;
-    };
+  return () => {
+    mediaQuery.removeEventListener("change", callback);
+    pointerQuery.removeEventListener("change", callback);
+  };
+}
 
-    setIsTouchDevice(checkTouchDevice());
+function getIsTouchDevice(): boolean {
+  if (typeof window === "undefined") return false;
 
-    const mediaQuery = window.matchMedia("(max-width: 768px)");
-    const handleMediaChange = () => {
-      setIsTouchDevice(checkTouchDevice());
-    };
-    mediaQuery.addEventListener("change", handleMediaChange);
+  const hasTouchScreen =
+    "ontouchstart" in window || navigator.maxTouchPoints > 0;
+  const isSmallScreen = window.matchMedia("(max-width: 768px)").matches;
+  const hasCoarsePointer = window.matchMedia("(pointer: coarse)").matches;
 
-    if (checkTouchDevice()) {
-      return () => {
-        mediaQuery.removeEventListener("change", handleMediaChange);
-      };
+  return hasTouchScreen || isSmallScreen || hasCoarsePointer;
+}
+
+function getServerSnapshot(): boolean {
+  return true; // Assume touch device on server to avoid flash
+}
+
+// External store for cursor state
+interface CursorState {
+  position: { x: number; y: number };
+  hidden: boolean;
+  clicked: boolean;
+  isPointer: boolean;
+  isText: boolean;
+}
+
+const initialCursorState: CursorState = {
+  position: { x: 0, y: 0 },
+  hidden: false,
+  clicked: false,
+  isPointer: false,
+  isText: false,
+};
+
+let cursorState: CursorState = { ...initialCursorState };
+let cursorListeners: Array<() => void> = [];
+let isSetup = false;
+
+function notifyCursorListeners() {
+  cursorListeners.forEach((listener) => listener());
+}
+
+function updateCursorState(updates: Partial<CursorState>) {
+  cursorState = { ...cursorState, ...updates };
+  notifyCursorListeners();
+}
+
+const textTags = new Set([
+  "P",
+  "SPAN",
+  "H1",
+  "H2",
+  "H3",
+  "H4",
+  "H5",
+  "H6",
+  "LABEL",
+  "LI",
+  "TD",
+  "TH",
+  "BLOCKQUOTE",
+  "PRE",
+  "CODE",
+  "EM",
+  "STRONG",
+  "B",
+  "I",
+  "U",
+  "S",
+  "SMALL",
+  "SUB",
+  "SUP",
+  "MARK",
+  "DEL",
+  "INS",
+  "Q",
+  "CITE",
+  "DFN",
+  "ABBR",
+  "TIME",
+  "VAR",
+  "SAMP",
+  "KBD",
+]);
+
+function isTextElement(element: HTMLElement): boolean {
+  const computedStyle = window.getComputedStyle(element);
+  if (
+    element.tagName === "INPUT" ||
+    element.tagName === "TEXTAREA" ||
+    element.getAttribute("contenteditable") === "true" ||
+    computedStyle.cursor === "text" ||
+    computedStyle.cursor === "vertical-text"
+  ) {
+    return true;
+  }
+
+  if (textTags.has(element.tagName)) {
+    const hasDirectText = Array.from(element.childNodes).some(
+      (node) => node.nodeType === Node.TEXT_NODE && node.textContent?.trim()
+    );
+    if (hasDirectText) {
+      return true;
     }
+  }
 
-    const textTags = new Set([
-      "P",
-      "SPAN",
-      "H1",
-      "H2",
-      "H3",
-      "H4",
-      "H5",
-      "H6",
-      "LABEL",
-      "LI",
-      "TD",
-      "TH",
-      "BLOCKQUOTE",
-      "PRE",
-      "CODE",
-      "EM",
-      "STRONG",
-      "B",
-      "I",
-      "U",
-      "S",
-      "SMALL",
-      "SUB",
-      "SUP",
-      "MARK",
-      "DEL",
-      "INS",
-      "Q",
-      "CITE",
-      "DFN",
-      "ABBR",
-      "TIME",
-      "VAR",
-      "SAMP",
-      "KBD",
-    ]);
+  return false;
+}
 
-    const isTextElement = (element: HTMLElement): boolean => {
-      const computedStyle = window.getComputedStyle(element);
-      if (
-        element.tagName === "INPUT" ||
-        element.tagName === "TEXTAREA" ||
-        element.getAttribute("contenteditable") === "true" ||
-        computedStyle.cursor === "text" ||
-        computedStyle.cursor === "vertical-text"
-      ) {
-        return true;
-      }
+function isClickableElement(element: HTMLElement): boolean {
+  if (
+    element.tagName === "A" ||
+    element.tagName === "BUTTON" ||
+    element.closest("a") !== null ||
+    element.closest("button") !== null ||
+    element.classList.contains("cursor-pointer") ||
+    element.closest(".cursor-pointer") !== null ||
+    element.getAttribute("role") === "button" ||
+    element.closest('[role="button"]') !== null ||
+    element.onclick !== null ||
+    element.getAttribute("onclick") !== null
+  ) {
+    return true;
+  }
 
-      if (textTags.has(element.tagName)) {
-        const hasDirectText = Array.from(element.childNodes).some(
-          (node) => node.nodeType === Node.TEXT_NODE && node.textContent?.trim()
-        );
-        if (hasDirectText) {
-          return true;
-        }
-      }
+  const computedStyle = window.getComputedStyle(element);
+  if (computedStyle.cursor === "pointer") {
+    return true;
+  }
 
-      return false;
-    };
+  return false;
+}
 
-    const isClickableElement = (element: HTMLElement): boolean => {
-      if (
-        element.tagName === "A" ||
-        element.tagName === "BUTTON" ||
-        element.closest("a") !== null ||
-        element.closest("button") !== null ||
-        element.classList.contains("cursor-pointer") ||
-        element.closest(".cursor-pointer") !== null ||
-        element.getAttribute("role") === "button" ||
-        element.closest('[role="button"]') !== null ||
-        element.onclick !== null ||
-        element.getAttribute("onclick") !== null
-      ) {
-        return true;
-      }
+function setupCursorListeners() {
+  if (typeof window === "undefined" || isSetup) return;
+  isSetup = true;
 
-      const computedStyle = window.getComputedStyle(element);
-      if (computedStyle.cursor === "pointer") {
-        return true;
-      }
+  const onMouseMove = (e: MouseEvent) => {
+    const target = e.target as HTMLElement;
+    const clickable = isClickableElement(target);
+    const text = !clickable && isTextElement(target);
 
-      return false;
-    };
+    updateCursorState({
+      position: { x: e.clientX, y: e.clientY },
+      isPointer: clickable,
+      isText: text,
+    });
+  };
 
-    const onMouseMove = (e: MouseEvent) => {
-      setPosition({ x: e.clientX, y: e.clientY });
+  const onMouseDown = () => {
+    updateCursorState({ clicked: true });
+  };
 
-      const target = e.target as HTMLElement;
+  const onMouseUp = () => {
+    updateCursorState({ clicked: false });
+  };
 
-      const clickable = isClickableElement(target);
-      const text = !clickable && isTextElement(target);
+  const onMouseLeave = () => {
+    updateCursorState({ hidden: true });
+  };
 
-      setIsPointer(clickable);
-      setIsText(text);
-    };
+  const onMouseEnter = () => {
+    updateCursorState({ hidden: false });
+  };
 
-    const onMouseDown = () => {
-      setClicked(true);
-    };
+  window.addEventListener("mousemove", onMouseMove);
+  window.addEventListener("mousedown", onMouseDown);
+  window.addEventListener("mouseup", onMouseUp);
+  document.body.addEventListener("mouseenter", onMouseEnter);
+  document.body.addEventListener("mouseleave", onMouseLeave);
 
-    const onMouseUp = () => {
-      setClicked(false);
-    };
+  document.body.style.cursor = "none";
 
-    const onMouseLeave = () => {
-      setHidden(true);
-    };
+  const style = document.createElement("style");
+  style.innerHTML = `* { cursor: none !important; }`;
+  style.id = "figma-cursor-style";
+  document.head.appendChild(style);
+}
 
-    const onMouseEnter = () => {
-      setHidden(false);
-    };
+function cleanupCursorListeners() {
+  if (typeof window === "undefined" || !isSetup) return;
 
-    window.addEventListener("mousemove", onMouseMove);
-    window.addEventListener("mousedown", onMouseDown);
-    window.addEventListener("mouseup", onMouseUp);
-    document.body.addEventListener("mouseenter", onMouseEnter);
-    document.body.addEventListener("mouseleave", onMouseLeave);
+  document.body.style.cursor = "auto";
+  const existingStyle = document.getElementById("figma-cursor-style");
+  if (existingStyle) {
+    existingStyle.remove();
+  }
+}
 
-    document.body.style.cursor = "none";
+function subscribeCursor(callback: () => void): () => void {
+  cursorListeners.push(callback);
+  setupCursorListeners();
 
-    const style = document.createElement("style");
-    style.innerHTML = `
-      * { cursor: none !important; }
-    `;
-    style.id = "figma-cursor-style";
-    document.head.appendChild(style);
+  return () => {
+    cursorListeners = cursorListeners.filter((l) => l !== callback);
+    if (cursorListeners.length === 0) {
+      cleanupCursorListeners();
+      isSetup = false;
+    }
+  };
+}
 
-    return () => {
-      window.removeEventListener("mousemove", onMouseMove);
-      window.removeEventListener("mousedown", onMouseDown);
-      window.removeEventListener("mouseup", onMouseUp);
-      document.body.removeEventListener("mouseenter", onMouseEnter);
-      document.body.removeEventListener("mouseleave", onMouseLeave);
-      document.body.style.cursor = "auto";
-      const existingStyle = document.getElementById("figma-cursor-style");
-      if (existingStyle) {
-        existingStyle.remove();
-      }
-      mediaQuery.removeEventListener("change", handleMediaChange);
-    };
-  }, []);
+function getCursorSnapshot(): CursorState {
+  return cursorState;
+}
+
+function getCursorServerSnapshot(): CursorState {
+  return initialCursorState;
+}
+
+export const FigmaCursor = () => {
+  const isTouchDevice = useSyncExternalStore(
+    subscribeTouchDevice,
+    getIsTouchDevice,
+    getServerSnapshot
+  );
+
+  const { position, hidden, clicked, isPointer, isText } = useSyncExternalStore(
+    subscribeCursor,
+    getCursorSnapshot,
+    getCursorServerSnapshot
+  );
 
   if (isTouchDevice) {
     return null;
@@ -296,8 +352,9 @@ export const FigmaCursor = () => {
     c0-0.4-0.1-1.1,0-1.5c0.1-0.3,0.3-0.7,0.7-0.8c0.3-0.1,0.6-0.1,0.9-0.1c0.3,0.1,0.6,0.3,0.8,0.5c0.4,0.6,0.4,1.9,0.4,1.8
     c0.1-0.4,0.1-1.2,0.3-1.6c0.1-0.2,0.5-0.4,0.7-0.5c0.3-0.1,0.7-0.1,1,0c0.2,0,0.6,0.3,0.7,0.5c0.2,0.3,0.3,1.3,0.4,1.7
     c0,0.1,0.1-0.4,0.3-0.7c0.4-0.6,1.8-0.8,1.9,0.6c0,0.7,0,0.6,0,1.1c0,0.5,0,0.8,0,1.2c0,0.4-0.1,1.3-0.2,1.7
-    c-0.1,0.3-0.4,1-0.7,1.4c0,0-1.1,1.2-1.2,1.8c-0.1,0.6-0.1,0.6-0.1,1c0,0.4,0.1,0.9,0.1,0.9s-0.8,0.1-1.2,0c-0.4-0.1-0.9-0.8-1-1.1
-    c-0.2-0.3-0.5-0.3-0.7,0c-0.2,0.4-0.7,1.1-1.1,1.1c-0.7,0.1-2.1,0-3.1,0c0,0,0.2-1-0.2-1.4c-0.3-0.3-0.8-0.8-1.1-1.1L11.3,20.4z"
+    c-0.1,0.3-0.4,1-0.7,1.4c0,0-1.1,1.2-1.2,1.8c-0.1,0.6-0.1,0.6-0.1,1c0,0.4,0.1,0.9,0.1,0.9s-0.8,0.1-1.2,0
+    c-0.4-0.1-0.9-0.8-1-1.1c-0.2-0.3-0.5-0.3-0.7,0c-0.2,0.4-0.7,1.1-1.1,1.1c-0.7,0.1-2.1,0-3.1,0c0,0,0.2-1-0.2-1.4
+    c-0.3-0.3-0.8-0.8-1.1-1.1L11.3,20.4z"
               />
 
               <path
@@ -361,25 +418,41 @@ export const FigmaCursor = () => {
         <motion.div
           key="arrow"
           animate={{
-            scale: clicked ? 0.8 : 1,
+            scale: clicked ? 0.85 : 1,
             opacity: 1,
-            rotate: -20,
+          }}
+          transition={{
+            type: "spring",
+            stiffness: 500,
+            damping: 30,
           }}
           className="relative"
         >
+          {/* Figma-style Arrow Cursor */}
           <svg
-            width="30"
-            height="30"
+            width="24"
+            height="24"
             viewBox="0 0 24 24"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
-            className="drop-shadow-sm"
+            style={{
+              filter: "drop-shadow(0 1px 2px rgba(0, 0, 0, 0.15))",
+            }}
           >
+            {/* White outer stroke for visibility on dark backgrounds */}
             <path
-              d="M5.65376 12.3673H5.46026L5.31717 12.4976L0.500002 16.8829L0.500002 1.19169L11.7841 12.3673H5.65376Z"
-              fill="black"
+              d="M5.5 3.21V20.8L10.12 16.18L12.78 22.8H15.18L12.38 15.79H19.29L5.5 3.21Z"
+              fill="white"
               stroke="white"
-              strokeWidth="0.5"
+              strokeWidth="2"
+              strokeLinejoin="round"
+            />
+            {/* Black fill - the main cursor shape */}
+            <path
+              d="M5.5 3.21V20.8L10.12 16.18L12.78 22.8H15.18L12.38 15.79H19.29L5.5 3.21Z"
+              fill="black"
+              stroke="black"
+              strokeWidth="1"
               strokeLinejoin="round"
             />
           </svg>

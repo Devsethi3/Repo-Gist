@@ -1,7 +1,7 @@
 // components/recent-analyses.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useCallback, useSyncExternalStore } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import { formatDistanceToNow, differenceInDays } from "date-fns";
@@ -26,6 +26,8 @@ interface RecentAnalysis {
   repoFullName: string;
   data: AnalysisResult;
   timestamp: number;
+  daysUntilExpiry: number;
+  isExpiringSoon: boolean;
 }
 
 interface RecentAnalysesProps {
@@ -35,42 +37,99 @@ interface RecentAnalysesProps {
 
 const EXPIRY_DAYS = 7;
 
-export function RecentAnalyses({ onSelect, className }: RecentAnalysesProps) {
-  const [history, setHistory] = useState<RecentAnalysis[]>([]);
-  const [isClient, setIsClient] = useState(false);
+// Pure helper functions - computed outside component
+function calculateDaysUntilExpiry(timestamp: number, now: number): number {
+  const expiryDate = timestamp + EXPIRY_DAYS * 24 * 60 * 60 * 1000;
+  return Math.max(0, differenceInDays(expiryDate, now));
+}
 
-  useEffect(() => {
-    setIsClient(true);
+function calculateIsExpiringSoon(timestamp: number, now: number): boolean {
+  return calculateDaysUntilExpiry(timestamp, now) <= 2;
+}
+
+function processHistory(
+  rawHistory: {
+    repoFullName: string;
+    data: AnalysisResult;
+    timestamp: number;
+  }[],
+  now: number
+): RecentAnalysis[] {
+  return rawHistory.map((item) => ({
+    ...item,
+    daysUntilExpiry: calculateDaysUntilExpiry(item.timestamp, now),
+    isExpiringSoon: calculateIsExpiringSoon(item.timestamp, now),
+  }));
+}
+
+// Create a simple store for analysis history
+let listeners: Array<() => void> = [];
+let cachedHistory: RecentAnalysis[] | null = null;
+
+function getSnapshot(): RecentAnalysis[] {
+  if (cachedHistory === null) {
+    const now = Date.now();
     const recent = analysisStorage.getRecent(10);
-    setHistory(recent);
+    cachedHistory = processHistory(recent, now);
+  }
+  return cachedHistory;
+}
+
+function getServerSnapshot(): RecentAnalysis[] {
+  return [];
+}
+
+function subscribe(listener: () => void): () => void {
+  listeners.push(listener);
+  return () => {
+    listeners = listeners.filter((l) => l !== listener);
+  };
+}
+
+function notifyListeners() {
+  cachedHistory = null; // Invalidate cache
+  listeners.forEach((listener) => listener());
+}
+
+function removeFromHistory(repoFullName: string) {
+  analysisStorage.remove(repoFullName);
+  notifyListeners();
+}
+
+function clearAllHistory() {
+  analysisStorage.clearAll();
+  notifyListeners();
+}
+
+export function RecentAnalyses({ onSelect, className }: RecentAnalysesProps) {
+  const history = useSyncExternalStore(
+    subscribe,
+    getSnapshot,
+    getServerSnapshot
+  );
+
+  const handleRemove = useCallback(
+    (repoFullName: string, e: React.MouseEvent) => {
+      e.stopPropagation();
+      e.preventDefault();
+      removeFromHistory(repoFullName);
+    },
+    []
+  );
+
+  const handleClearAll = useCallback(() => {
+    clearAllHistory();
   }, []);
 
-  const handleRemove = (repoFullName: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    e.preventDefault();
-    analysisStorage.remove(repoFullName);
-    setHistory((prev) => prev.filter((h) => h.repoFullName !== repoFullName));
-  };
+  const handleSelect = useCallback(
+    (repoFullName: string) => {
+      onSelect(`https://github.com/${repoFullName}`);
+    },
+    [onSelect]
+  );
 
-  const handleClearAll = () => {
-    analysisStorage.clearAll();
-    setHistory([]);
-  };
-
-  const handleSelect = (repoFullName: string) => {
-    onSelect(`https://github.com/${repoFullName}`);
-  };
-
-  const getDaysUntilExpiry = (timestamp: number) => {
-    const expiryDate = timestamp + EXPIRY_DAYS * 24 * 60 * 60 * 1000;
-    return Math.max(0, differenceInDays(expiryDate, Date.now()));
-  };
-
-  const isExpiringSoon = (timestamp: number) => {
-    return getDaysUntilExpiry(timestamp) <= 2;
-  };
-
-  if (!isClient || history.length === 0) {
+  // Don't render when empty
+  if (history.length === 0) {
     return null;
   }
 
@@ -134,11 +193,17 @@ export function RecentAnalyses({ onSelect, className }: RecentAnalysesProps) {
             <ScrollArea className="w-full">
               <div className="flex gap-3 pb-2">
                 <AnimatePresence mode="popLayout">
-                  {history.map(({ repoFullName, data, timestamp }, index) => {
-                    const daysLeft = getDaysUntilExpiry(timestamp);
-                    const expiringSoon = isExpiringSoon(timestamp);
-
-                    return (
+                  {history.map(
+                    (
+                      {
+                        repoFullName,
+                        data,
+                        timestamp,
+                        daysUntilExpiry,
+                        isExpiringSoon,
+                      },
+                      index
+                    ) => (
                       <motion.div
                         key={repoFullName}
                         layout
@@ -155,21 +220,21 @@ export function RecentAnalyses({ onSelect, className }: RecentAnalysesProps) {
                             "border bg-background/50",
                             "hover:bg-muted/50 hover:border-primary/40",
                             "transition-all duration-200",
-                            expiringSoon
+                            isExpiringSoon
                               ? "border-amber-500/30"
                               : "border-border/50"
                           )}
                         >
                           {/* Expiry badge */}
-                          {expiringSoon && (
+                          {isExpiringSoon && (
                             <div className="absolute -top-2 left-3">
                               <Badge
                                 variant="outline"
                                 className="text-[9px] h-4 px-1.5 bg-amber-500/10 border-amber-500/30 text-amber-600 dark:text-amber-400"
                               >
-                                {daysLeft === 0
+                                {daysUntilExpiry === 0
                                   ? "Expires today"
-                                  : `${daysLeft}d left`}
+                                  : `${daysUntilExpiry}d left`}
                               </Badge>
                             </div>
                           )}
@@ -194,7 +259,7 @@ export function RecentAnalyses({ onSelect, className }: RecentAnalysesProps) {
                           <div
                             className={cn(
                               "flex items-start gap-2.5 pr-6",
-                              expiringSoon && "mt-1"
+                              isExpiringSoon && "mt-1"
                             )}
                           >
                             {data.metadata?.owner?.avatarUrl ? (
@@ -262,8 +327,8 @@ export function RecentAnalyses({ onSelect, className }: RecentAnalysesProps) {
                           </div>
                         </div>
                       </motion.div>
-                    );
-                  })}
+                    )
+                  )}
                 </AnimatePresence>
               </div>
               <ScrollBar orientation="horizontal" />
