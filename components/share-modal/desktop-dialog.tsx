@@ -136,7 +136,7 @@ export function DesktopDialog({
                       <>
                         <HugeiconsIcon
                           icon={Loading01Icon}
-                          className="w-4 h-4 animate-spin"	
+                          className="w-4 h-4"	
                         />
                         Generating...
                       </>
