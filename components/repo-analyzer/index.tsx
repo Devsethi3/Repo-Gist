@@ -373,7 +373,7 @@ export function RepoAnalyzer() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
             >
-              <About />
+              {/* <About /> */}
             </motion.div>
           )}
         </AnimatePresence>
