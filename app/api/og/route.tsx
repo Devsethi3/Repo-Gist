@@ -1,4 +1,3 @@
-
 import { ImageResponse } from "next/og";
 import { NextRequest } from "next/server";
 
@@ -7,29 +6,39 @@ export const runtime = "edge";
 function truncateText(text: string, maxLength: number): string {
   if (!text) return "";
   if (text.length <= maxLength) return text;
-
   const truncated = text.slice(0, maxLength);
   const lastSpace = truncated.lastIndexOf(" ");
-
   if (lastSpace > maxLength * 0.6) {
     return truncated.slice(0, lastSpace) + "...";
   }
   return truncated + "...";
 }
 
+function formatStars(stars: string): string {
+  // Already formatted or format if number
+  if (stars.includes("K") || stars.includes("M")) return stars;
+  const num = parseInt(stars);
+  if (isNaN(num)) return "0";
+  if (num >= 1000000)
+    return (num / 1000000).toFixed(1).replace(/\.0$/, "") + "M";
+  if (num >= 1000) return (num / 1000).toFixed(1).replace(/\.0$/, "") + "K";
+  return stars;
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
 
+    // Get parameters with defaults
     const repo = searchParams.get("repo") || "Repository";
     const owner = searchParams.get("owner") || "Owner";
-    const score = parseInt(searchParams.get("score") || "0");
-    const stars = searchParams.get("stars") || "0";
-    const language = searchParams.get("language") || "Unknown";
-    const description = searchParams.get("description") || "";
+    const scoreParam = searchParams.get("score");
+    const score = scoreParam ? parseInt(scoreParam) : 85; // Default to 85 if not provided
+    const stars = formatStars(searchParams.get("stars") || "0");
+    const language =
+      searchParams.get("lang") || searchParams.get("language") || "Unknown";
 
     const truncatedRepo = truncateText(repo, 30);
-    const truncatedDescription = truncateText(description, 120);
 
     const getScoreConfig = (score: number) => {
       if (score >= 80)
@@ -90,7 +99,7 @@ export async function GET(request: NextRequest) {
                   width: "40px",
                   height: "40px",
                   borderRadius: "10px",
-                  backgroundColor: "#0A0B0E",
+                  backgroundColor: "#3b82f620",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -228,20 +237,6 @@ export async function GET(request: NextRequest) {
             >
               {truncatedRepo}
             </h1>
-
-            {truncatedDescription && (
-              <p
-                style={{
-                  fontSize: "24px",
-                  color: "#71717a",
-                  marginBottom: "32px",
-                  lineHeight: 1.4,
-                  maxWidth: "80%",
-                }}
-              >
-                {truncatedDescription}
-              </p>
-            )}
 
             {/* Stats */}
             <div

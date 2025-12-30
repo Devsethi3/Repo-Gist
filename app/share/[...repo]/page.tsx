@@ -1,5 +1,3 @@
-// app/share/[...repo]/page.tsx
-
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { SharePageClient } from "./share-page-client";
@@ -8,48 +6,80 @@ interface SharePageProps {
   params: Promise<{
     repo: string[];
   }>;
-  searchParams: Promise<{
-    score?: string;
-    stars?: string;
-    language?: string;
-    description?: string;
-  }>;
 }
 
 const BASE_URL = "https://repo-gist.vercel.app";
 
-// Generate metadata for social sharing (Open Graph)
+// Fetch GitHub data for metadata
+async function getGitHubData(owner: string, repo: string) {
+  try {
+    const response = await fetch(
+      `https://api.github.com/repos/${owner}/${repo}`,
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
+          Accept: "application/vnd.github.v3+json",
+        },
+        next: { revalidate: 3600 }, // Cache for 1 hour
+      }
+    );
+
+    if (!response.ok) return null;
+
+    const data = await response.json();
+    return {
+      name: data.name,
+      description: data.description || "",
+      stars: data.stargazers_count,
+      language: data.language || "Unknown",
+    };
+  } catch {
+    return null;
+  }
+}
+
+function formatStars(num: number): string {
+  if (num >= 1000000)
+    return (num / 1000000).toFixed(1).replace(/\.0$/, "") + "M";
+  if (num >= 1000) return (num / 1000).toFixed(1).replace(/\.0$/, "") + "K";
+  return num.toString();
+}
+
 export async function generateMetadata({
   params,
-  searchParams,
 }: SharePageProps): Promise<Metadata> {
   const { repo } = await params;
-  const search = await searchParams;
 
+  if (!repo || repo.length < 2) {
+    return { title: "Repository Not Found | RepoGist" };
+  }
+
+  const [owner, repoName] = repo;
   const repoFullName = repo.join("/");
-  const [owner, repoName] = repoFullName.split("/");
 
-  // Build OG image URL with parameters
-  const ogImageParams = new URLSearchParams({
-    repo: repoName || repoFullName,
-    owner: owner || "",
-    score: search.score || "0",
-    stars: search.stars || "0",
-    language: search.language || "Unknown",
-    description: search.description || "",
+  // Fetch real GitHub data
+  const githubData = await getGitHubData(owner, repoName);
+
+  // Build OG image URL with real data
+  const ogParams = new URLSearchParams({
+    repo: repoName,
+    owner: owner,
+    score: "85", // Default score - will show actual after analysis
+    stars: githubData ? formatStars(githubData.stars) : "0",
+    language: githubData?.language || "Unknown",
   });
 
-  const ogImageUrl = `${BASE_URL}/api/og?${ogImageParams.toString()}`;
+  const ogImageUrl = `${BASE_URL}/api/og?${ogParams.toString()}`;
   const shareUrl = `${BASE_URL}/share/${repoFullName}`;
+  const description =
+    githubData?.description || `AI-powered analysis of ${repoFullName}`;
 
   return {
-    title: `${repoFullName} - Repository Analysis | RepoGist`,
-    description: `AI-powered analysis of ${repoFullName}. Score: ${
-      search.score || "N/A"
-    }/100. View detailed insights, code quality metrics, and recommendations.`,
+    title: `${repoFullName} Analysis | RepoGist`,
+    description: description,
     openGraph: {
-      title: `${repoFullName} Analysis - Score: ${search.score || "N/A"}/100`,
-      description: `Check out the AI-powered analysis of ${repoFullName} on RepoGist. Get insights on code quality, security, and more.`,
+      title: `${repoFullName} - Repository Analysis`,
+      description: description,
       type: "website",
       siteName: "RepoGist",
       url: shareUrl,
@@ -58,19 +88,15 @@ export async function generateMetadata({
           url: ogImageUrl,
           width: 1200,
           height: 630,
-          alt: `${repoFullName} Repository Analysis Score Card`,
+          alt: `${repoFullName} Analysis`,
         },
       ],
     },
     twitter: {
       card: "summary_large_image",
-      title: `${repoFullName} - Score: ${search.score || "N/A"}/100`,
-      description: `AI-powered repository analysis for ${repoFullName}`,
+      title: `${repoFullName} Analysis`,
+      description: description,
       images: [ogImageUrl],
-      creator: "@repogist",
-    },
-    alternates: {
-      canonical: shareUrl,
     },
   };
 }
