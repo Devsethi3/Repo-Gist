@@ -1,13 +1,27 @@
+// app/page.tsx
+
 "use client";
 
+import { useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { Footer } from "@/components/footer";
 import { HeroHeader } from "@/components/header";
 import { RepoAnalyzer } from "@/components/repo-analyzer";
 import { RecentAnalyses } from "@/components/recent-analyses";
 import { useAnalysis } from "@/hooks/use-analysis";
 
-export default function Home() {
+function HomeContent() {
+  const searchParams = useSearchParams();
   const { analyze, isIdle } = useAnalysis();
+
+  // Handle repo query parameter from shared links
+  useEffect(() => {
+    const repoParam = searchParams.get("repo");
+    if (repoParam) {
+      // Auto-trigger analysis when coming from a share link
+      analyze(repoParam);
+    }
+  }, [searchParams, analyze]);
 
   return (
     <div className="min-h-screen w-full relative jetbrains-mono">
@@ -95,5 +109,13 @@ export default function Home() {
       </main>
       <Footer />
     </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-background" />}>
+      <HomeContent />
+    </Suspense>
   );
 }

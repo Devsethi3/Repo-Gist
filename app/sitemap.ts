@@ -1,12 +1,20 @@
 import { MetadataRoute } from "next";
 
+const BASE_URL = "https://repo-gist.vercel.app";
+
 export default function sitemap(): MetadataRoute.Sitemap {
   return [
     {
-      url: "https://repo-gist.vercel.app",
+      url: BASE_URL,
       lastModified: new Date(),
       changeFrequency: "daily",
       priority: 1,
+    },
+    {
+      url: `${BASE_URL}/share`,
+      lastModified: new Date(),
+      changeFrequency: "weekly",
+      priority: 0.8,
     },
   ];
 }

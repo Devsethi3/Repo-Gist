@@ -53,7 +53,7 @@ export const metadata: Metadata = {
     template: "%s | RepoGist",
   },
   description:
-    "Analyze any GitHub repository with AI. Get instant insights on code quality, architecture, dependencies, security vulnerabilities, and actionable improvement suggestions.",
+    "Analyze GitHub repositories with AI to uncover code quality issues, architecture insights, dependencies, and security vulnerabilities in seconds.",
   applicationName: "RepoGist",
   authors: [{ name: "Dev Prasad Sethi", url: "https://x.com/imsethidev" }],
   generator: "Next.js",

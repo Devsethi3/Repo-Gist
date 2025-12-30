@@ -47,9 +47,9 @@ export const HeroHeader = () => {
                 <div className="absolute inset-0 bg-primary/20 blur-lg rounded-full" />
                 <RepoGistLogo className="relative size-7 sm:size-8 text-primary" />
               </div>
-              <h1 className="instrument-serif text-lg sm:text-xl md:text-2xl truncate">
+              <h2 className="instrument-serif text-lg sm:text-xl md:text-2xl truncate">
                 RepoGist
-              </h1>
+              </h2>
             </Link>
 
             {/* Right actions */}

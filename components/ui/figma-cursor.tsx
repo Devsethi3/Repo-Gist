@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useSyncExternalStore } from "react";
+import { useSyncExternalStore } from "react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 

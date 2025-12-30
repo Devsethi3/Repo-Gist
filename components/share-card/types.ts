@@ -1,3 +1,5 @@
+// components/share-card/types.ts
+
 import { ShareCardData } from "@/lib/share";
 
 export interface ShareCardProps {

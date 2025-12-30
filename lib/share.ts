@@ -30,7 +30,9 @@ export interface ShareCardData {
   analyzedAt: string;
 }
 
-export function createShareData(result: Partial<AnalysisResult>): ShareCardData | null {
+export function createShareData(
+  result: Partial<AnalysisResult>
+): ShareCardData | null {
   if (!result.metadata) return null;
 
   const { metadata, scores, techStack, insights } = result;
@@ -69,12 +71,52 @@ export function createShareData(result: Partial<AnalysisResult>): ShareCardData 
     }),
   };
 }
+// lib/share.ts
 
 export function generateShareUrl(data: ShareCardData): string {
+  // Use the repository's full name as the share path
+  // This creates clean URLs like: https://yoursite.com/share/facebook/react
+  const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
+  return `${baseUrl}/share/${data.repoFullName}`;
+}
+
+export function generateTwitterShareText(data: ShareCardData): string {
+  const scoreEmoji =
+    data.overallScore >= 80 ? "🟢" : data.overallScore >= 60 ? "🟡" : "🔴";
+  const techList = data.techStack.slice(0, 3).join(", ");
+
+  return `🔍 Just analyzed ${data.repoFullName} with RepoGist!
+
+${scoreEmoji} Score: ${data.overallScore}/100
+⭐ ${formatNumberShort(data.stars)} stars
+🛠️ ${techList}${
+    data.techStack.length > 3 ? ` +${data.techStack.length - 3} more` : ""
+  }
+
+Check out the full analysis:`;
+}
+
+export function generateTwitterShareUrl(data: ShareCardData): string {
+  const text = generateTwitterShareText(data);
+  const url = generateShareUrl(data);
+  return `https://twitter.com/intent/tweet?text=${encodeURIComponent(
+    text
+  )}&url=${encodeURIComponent(url)}`;
+}
+
+export function generateLinkedInShareUrl(data: ShareCardData): string {
+  const url = generateShareUrl(data);
+  return `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(
+    url
+  )}`;
+}
+
+// Keep this for backward compatibility but it's no longer the primary method
+export function generateEncodedShareUrl(data: ShareCardData): string {
   try {
     const encoded = btoa(encodeURIComponent(JSON.stringify(data)));
     const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
-    return `${baseUrl}/share/${encoded}`;
+    return `${baseUrl}/share/data/${encoded}`;
   } catch {
     return "";
   }
@@ -88,33 +130,12 @@ export function parseShareData(encoded: string): ShareCardData | null {
   }
 }
 
-export function generateTwitterShareText(data: ShareCardData): string {
-  const scoreEmoji = data.overallScore >= 80 ? "🟢" : data.overallScore >= 60 ? "🟡" : "🔴";
-  const techList = data.techStack.slice(0, 3).join(", ");
-  
-  return `🔍 Just analyzed ${data.repoFullName} with RepoGist!
-
-${scoreEmoji} Score: ${data.overallScore}/100
-⭐ ${formatNumberShort(data.stars)} stars
-🛠️ ${techList}${data.techStack.length > 3 ? ` +${data.techStack.length - 3} more` : ""}
-
-Check out the full analysis:`;
+function formatNumberShort(num: number): string {
+  if (num >= 1000000)
+    return (num / 1000000).toFixed(1).replace(/\.0$/, "") + "M";
+  if (num >= 1000) return (num / 1000).toFixed(1).replace(/\.0$/, "") + "K";
+  return num.toString();
 }
-
-export function generateTwitterShareUrl(data: ShareCardData): string {
-  const text = generateTwitterShareText(data);
-  const url = generateShareUrl(data);
-  return `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
-}
-
-export function generateLinkedInShareUrl(data: ShareCardData): string {
-  const url = generateShareUrl(data);
-  // const title = `${data.repoName} - Repository Analysis`;
-  // const summary = `AI analysis score: ${data.overallScore}/100. Tech stack: ${data.techStack.slice(0, 5).join(", ")}`;
-  
-  return `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`;
-}
-
 export async function copyToClipboard(text: string): Promise<boolean> {
   try {
     await navigator.clipboard.writeText(text);
@@ -143,7 +164,7 @@ export async function downloadAsImage(
 ): Promise<boolean> {
   try {
     const { toPng } = await import("html-to-image");
-    
+
     const dataUrl = await toPng(element, {
       quality: 1,
       pixelRatio: 2,
@@ -160,16 +181,10 @@ export async function downloadAsImage(
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    
+
     return true;
   } catch (error) {
     console.error("Failed to download image:", error);
     return false;
   }
-}
-
-function formatNumberShort(num: number): string {
-  if (num >= 1000000) return (num / 1000000).toFixed(1).replace(/\.0$/, "") + "M";
-  if (num >= 1000) return (num / 1000).toFixed(1).replace(/\.0$/, "") + "K";
-  return num.toString();
 }

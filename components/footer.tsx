@@ -21,9 +21,9 @@ export function Footer() {
                   <div className="absolute inset-0 bg-primary/20 blur-lg rounded-full group-hover:bg-primary/30 transition-colors" />
                   <RepoGistLogo className="relative size-8 text-primary" />
                 </div>
-                <h1 className="instrument-serif text-2xl text-foreground">
+                <h2 className="instrument-serif text-2xl text-foreground">
                   RepoGist
-                </h1>
+                </h2>
               </Link>
               <p className="text-sm text-muted-foreground jetbrains-mono leading-relaxed">
                 AI-powered repository analysis.

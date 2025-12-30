@@ -1,4 +1,3 @@
-// components/repo-analyzer/index.tsx
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
@@ -19,7 +18,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import About from "../about";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   AlertCircleIcon,

@@ -5,8 +5,10 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
 import { StreamingAnalysis } from "@/lib/types";
-import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Loading03Icon } from "@hugeicons/core-free-icons";
 
 interface LoadingSkeletonProps {
   status: StreamingAnalysis;
@@ -22,7 +24,11 @@ export function LoadingSkeleton({ status }: LoadingSkeletonProps) {
         className="flex flex-col items-center gap-4 px-4"
       >
         <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 shadow-sm">
-          <Loader2 className="w-4 h-4 animate-spin text-primary" />
+          <HugeiconsIcon
+            icon={Loading03Icon}
+            className="w-4 h-4 animate-spin text-primary"
+            strokeWidth={1.5}
+          />
           <span className="text-sm font-medium text-primary whitespace-nowrap">
             {status.currentStep}
           </span>
@@ -172,10 +178,7 @@ function AnalysisHeaderSkeleton() {
           </div>
           <div className="flex flex-wrap gap-2">
             {[1, 2, 3, 4, 5, 6].map((i) => (
-              <Skeleton
-                key={i}
-                className="h-6 rounded-md w-30"
-              />
+              <Skeleton key={i} className="h-6 rounded-md w-30" />
             ))}
           </div>
         </div>
@@ -188,10 +191,7 @@ function AnalysisHeaderSkeleton() {
           </div>
           <div className="flex flex-wrap gap-2">
             {[1, 2, 3, 4].map((i) => (
-              <Skeleton
-                key={i}
-                className="h-6 rounded-md w-20"
-              />
+              <Skeleton key={i} className="h-6 rounded-md w-20" />
             ))}
           </div>
         </div>
@@ -226,9 +226,7 @@ function FileTreeSkeleton() {
             style={{ paddingLeft: `${(i % 3) * 16 + 8}px` }}
           >
             <Skeleton className="w-4 h-4 rounded shrink-0" />
-            <Skeleton
-              className="h-4 rounded-sm w-50"
-            />
+            <Skeleton className="h-4 rounded-sm w-50" />
           </div>
         ))}
       </CardContent>

@@ -1,3 +1,5 @@
+// components/share-modal/types.ts
+
 import { LucideIcon } from "lucide-react";
 import { AnalysisResult } from "@/lib/types";
 import { ShareCardData } from "@/lib/share";

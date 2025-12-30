@@ -1,5 +1,49 @@
+# public/robots.txt
+
+# *************************************
+# Robots.txt for RepoGist
+# https://repo-gist.vercel.app
+# *************************************
+
+# Allow all search engine crawlers
 User-agent: *
 Allow: /
+Allow: /share/
+
+# Disallow API and internal routes
+Disallow: /api/
+Disallow: /_next/
+Disallow: /static/
+Disallow: /*.json$
+Disallow: /*?*
+
+# Google-specific rules
+User-agent: Googlebot
+Allow: /
+Allow: /share/
 Disallow: /api/
 
+# Bing-specific rules
+User-agent: Bingbot
+Allow: /
+Allow: /share/
+Disallow: /api/
+
+# Block AI crawlers (optional)
+User-agent: GPTBot
+Disallow: /
+
+User-agent: ChatGPT-User
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+User-agent: anthropic-ai
+Disallow: /
+
+# Sitemap
 Sitemap: https://repo-gist.vercel.app/sitemap.xml
+
+# Crawl delay
+Crawl-delay: 1
