@@ -81,10 +81,12 @@ function formatNumberShort(num: number): string {
 
 const SITE_URL = "https://repo-gist.vercel.app";
 
-export function generateShareUrl(): string {
-  return SITE_URL;
+// Share link with repo path (for copy)
+export function generateShareUrl(data: ShareCardData): string {
+  return `${SITE_URL}/share/${data.repoFullName}`;
 }
 
+// Twitter share
 export function generateTwitterShareUrl(data: ShareCardData): string {
   const scoreEmoji =
     data.overallScore >= 80 ? "🟢" : data.overallScore >= 60 ? "🟡" : "🔴";
@@ -103,24 +105,21 @@ Analyze any GitHub repo instantly 👇`;
   )}&url=${encodeURIComponent(SITE_URL)}`;
 }
 
+// LinkedIn share
 export function generateLinkedInShareUrl(data: ShareCardData): string {
-  const text = `🔍 Just analyzed ${data.repoFullName} of using RepoGist!
+  const text = `🔍 Just analyzed ${data.repoFullName} using RepoGist!
 
 📊 Score: ${data.overallScore}/100
 ⭐ Stars: ${formatNumberShort(data.stars)}
 💻 Language: ${data.language || "Multiple"}
 
-RepoGist helps you instantly understand any GitHub repository using AI. Try it out!
+RepoGist is an AI-powered tool that analyzes any GitHub repository instantly. Try it out!
 
 ${SITE_URL}`;
 
   return `https://www.linkedin.com/feed/?shareActive=true&text=${encodeURIComponent(
     text
   )}`;
-}
-
-export function generateCopyLink(): string {
-  return SITE_URL;
 }
 
 export async function copyToClipboard(text: string): Promise<boolean> {
@@ -175,6 +174,7 @@ export async function downloadAsImage(
   }
 }
 
+// Redirect functions
 export function redirectToTwitter(data: ShareCardData): void {
   window.location.href = generateTwitterShareUrl(data);
 }

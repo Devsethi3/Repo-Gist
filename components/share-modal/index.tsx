@@ -4,7 +4,7 @@ import { useState, useRef, useCallback, useMemo } from "react";
 import {
   ShareCardData,
   createShareData,
-  generateCopyLink,
+  generateShareUrl,
   redirectToTwitter,
   redirectToLinkedIn,
   copyToClipboard,
@@ -32,12 +32,14 @@ export function ShareModal({ open, onOpenChange, result }: ShareModalProps) {
   const currentVariant = VARIANTS.find((v) => v.id === variant);
 
   const handleCopyLink = useCallback(async () => {
-    const success = await copyToClipboard(generateCopyLink());
+    if (!shareData) return;
+    // Copies: https://repo-gist.vercel.app/share/owner/repo
+    const success = await copyToClipboard(generateShareUrl(shareData));
     if (success) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
-  }, []);
+  }, [shareData]);
 
   const handleDownload = useCallback(async () => {
     if (!cardRef.current || !shareData) return;
