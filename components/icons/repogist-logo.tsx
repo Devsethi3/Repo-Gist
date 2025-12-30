@@ -6,11 +6,21 @@ type IconProps = SVGProps<SVGSVGElement> & {
   title?: string;
 };
 
-function RepoGistLogo({ fill = "currentColor", secondaryfill, ...props }: IconProps) {
+function RepoGistLogo({
+  fill = "currentColor",
+  secondaryfill,
+  ...props
+}: IconProps) {
   secondaryfill = secondaryfill || fill;
 
   return (
-    <svg height="18" width="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg" {...props}>
+    <svg
+      height="18"
+      width="18"
+      viewBox="0 0 18 18"
+      xmlns="http://www.w3.org/2000/svg"
+      {...props}
+    >
       <g fill={fill}>
         <path
           d="M4.25 2C2.73079 2 1.5 3.23079 1.5 4.75V6.5H16.5V6.25C16.5 4.73079 15.2692 3.5 13.75 3.5H8.72395L8.34569 3.02827C7.82347 2.37825 7.03552 2 6.201 2H4.25Z"
@@ -31,5 +41,3 @@ function RepoGistLogo({ fill = "currentColor", secondaryfill, ...props }: IconPr
 }
 
 export default RepoGistLogo;
-
-// i want to create this icon as my favicon

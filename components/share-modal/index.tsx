@@ -1,3 +1,5 @@
+// components/share-modal/index.tsx
+
 "use client";
 
 import { useState, useRef, useCallback, useMemo } from "react";
@@ -5,8 +7,9 @@ import {
   ShareCardData,
   createShareData,
   generateShareUrl,
+  generateCleanShareUrl,
   generateTwitterShareUrl,
-  generateLinkedInShareUrl,
+  generateLinkedInShareUrlAlt, // Use the alternative that works better
   copyToClipboard,
   downloadAsImage,
 } from "@/lib/share";
@@ -33,6 +36,7 @@ export function ShareModal({ open, onOpenChange, result }: ShareModalProps) {
 
   const handleCopyLink = useCallback(async () => {
     if (!shareData) return;
+    // Copy the full URL with parameters for proper OG image
     const url = generateShareUrl(shareData);
     const success = await copyToClipboard(url);
     if (success) {
@@ -65,16 +69,16 @@ export function ShareModal({ open, onOpenChange, result }: ShareModalProps) {
     window.open(
       generateTwitterShareUrl(shareData),
       "_blank",
-      "noopener,noreferrer"
+      "noopener,noreferrer,width=600,height=400"
     );
   }, [shareData]);
 
   const handleLinkedInShare = useCallback(() => {
     if (!shareData) return;
     window.open(
-      generateLinkedInShareUrl(shareData),
+      generateLinkedInShareUrlAlt(shareData),
       "_blank",
-      "noopener,noreferrer"
+      "noopener,noreferrer,width=600,height=600"
     );
   }, [shareData]);
 

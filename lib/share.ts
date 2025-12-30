@@ -71,12 +71,38 @@ export function createShareData(
     }),
   };
 }
-// lib/share.ts
 
+function formatNumberShort(num: number): string {
+  if (num >= 1000000)
+    return (num / 1000000).toFixed(1).replace(/\.0$/, "") + "M";
+  if (num >= 1000) return (num / 1000).toFixed(1).replace(/\.0$/, "") + "K";
+  return num.toString();
+}
+
+// Generate share URL with query parameters for OG image
 export function generateShareUrl(data: ShareCardData): string {
-  // Use the repository's full name as the share path
-  // This creates clean URLs like: https://yoursite.com/share/facebook/react
-  const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
+  const baseUrl =
+    typeof window !== "undefined"
+      ? window.location.origin
+      : "https://repo-gist.vercel.app";
+
+  // Add query parameters for OG image generation
+  const params = new URLSearchParams({
+    score: data.overallScore.toString(),
+    stars: formatNumberShort(data.stars),
+    language: data.language || "Unknown",
+    description: data.description?.slice(0, 100) || "",
+  });
+
+  return `${baseUrl}/share/${data.repoFullName}?${params.toString()}`;
+}
+
+// Generate clean URL without query params (for display purposes)
+export function generateCleanShareUrl(data: ShareCardData): string {
+  const baseUrl =
+    typeof window !== "undefined"
+      ? window.location.origin
+      : "https://repo-gist.vercel.app";
   return `${baseUrl}/share/${data.repoFullName}`;
 }
 
@@ -104,44 +130,37 @@ export function generateTwitterShareUrl(data: ShareCardData): string {
   )}&url=${encodeURIComponent(url)}`;
 }
 
+// Fixed LinkedIn sharing - using the correct format
 export function generateLinkedInShareUrl(data: ShareCardData): string {
   const url = generateShareUrl(data);
-  return `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(
-    url
+  // LinkedIn requires the URL to be properly encoded
+  // Using the share endpoint that works better
+  return `https://www.linkedin.com/feed/?shareActive=true&text=${encodeURIComponent(
+    `🔍 Check out this repository analysis for ${data.repoFullName}!\n\n` +
+      `📊 Score: ${data.overallScore}/100\n` +
+      `⭐ ${formatNumberShort(data.stars)} stars\n\n` +
+      `${url}`
   )}`;
 }
 
-// Keep this for backward compatibility but it's no longer the primary method
-export function generateEncodedShareUrl(data: ShareCardData): string {
-  try {
-    const encoded = btoa(encodeURIComponent(JSON.stringify(data)));
-    const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
-    return `${baseUrl}/share/data/${encoded}`;
-  } catch {
-    return "";
-  }
+// Alternative LinkedIn share URL (if the above doesn't work well)
+export function generateLinkedInShareUrlAlt(data: ShareCardData): string {
+  const url = generateShareUrl(data);
+  const title = `${data.repoName} - Repository Analysis`;
+  const summary = `AI analysis score: ${data.overallScore}/100. Check out the full analysis on RepoGist.`;
+
+  return `https://www.linkedin.com/shareArticle?mini=true&url=${encodeURIComponent(
+    url
+  )}&title=${encodeURIComponent(title)}&summary=${encodeURIComponent(
+    summary
+  )}&source=RepoGist`;
 }
 
-export function parseShareData(encoded: string): ShareCardData | null {
-  try {
-    return JSON.parse(decodeURIComponent(atob(encoded)));
-  } catch {
-    return null;
-  }
-}
-
-function formatNumberShort(num: number): string {
-  if (num >= 1000000)
-    return (num / 1000000).toFixed(1).replace(/\.0$/, "") + "M";
-  if (num >= 1000) return (num / 1000).toFixed(1).replace(/\.0$/, "") + "K";
-  return num.toString();
-}
 export async function copyToClipboard(text: string): Promise<boolean> {
   try {
     await navigator.clipboard.writeText(text);
     return true;
   } catch {
-    // Fallback for older browsers
     try {
       const textArea = document.createElement("textarea");
       textArea.value = text;
@@ -168,7 +187,7 @@ export async function downloadAsImage(
     const dataUrl = await toPng(element, {
       quality: 1,
       pixelRatio: 2,
-      backgroundColor: "#09090b", // zinc-950
+      backgroundColor: "#09090b",
       style: {
         transform: "scale(1)",
         transformOrigin: "top left",

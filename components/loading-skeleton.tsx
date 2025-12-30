@@ -137,12 +137,12 @@ function AnalysisHeaderSkeleton() {
           <Skeleton className="h-4 w-2/3 sm:w-1/2" />
         </div>
 
-        {/* Meta Badges - Scrollable on mobile */}
         <div className="flex gap-2 mt-4 overflow-x-auto pb-1 -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-hide">
           <Skeleton className="h-6 w-20 rounded-md shrink-0" />
           <Skeleton className="h-6 w-16 rounded-md shrink-0" />
-          <Skeleton className="h-6 w-24 rounded-md shrink-0" />
-          <Skeleton className="h-6 w-28 rounded-md shrink-0" />
+          <Skeleton className="h-6 w-16 rounded-md shrink-0" />
+
+          <Skeleton className="h-6 w-28 rounded-md shrink-0 hidden sm:block" />
         </div>
 
         {/* Stats Grid - 2 cols on mobile, 4 on desktop */}
