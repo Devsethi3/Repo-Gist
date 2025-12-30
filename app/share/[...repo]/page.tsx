@@ -8,9 +8,8 @@ interface SharePageProps {
   }>;
 }
 
-const BASE_URL = "https://repo-gist.vercel.app";
+const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL!;
 
-// Fetch GitHub data for metadata
 async function getGitHubData(owner: string, repo: string) {
   try {
     const response = await fetch(
@@ -20,7 +19,7 @@ async function getGitHubData(owner: string, repo: string) {
           Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
           Accept: "application/vnd.github.v3+json",
         },
-        next: { revalidate: 3600 }, // Cache for 1 hour
+        next: { revalidate: 3600 },
       }
     );
 
@@ -51,38 +50,41 @@ export async function generateMetadata({
   const { repo } = await params;
 
   if (!repo || repo.length < 2) {
-    return { title: "Repository Not Found | RepoGist" };
+    return {
+      title: "Not Found | RepoGist",
+      description: "Repository not found on RepoGist.",
+    };
   }
 
-  const [owner, repoName] = repo;
-  const repoFullName = repo.join("/");
+  const owner = repo[0];
+  const repoName = repo[1];
+  const repoFullName = `${owner}/${repoName}`;
 
-  // Fetch real GitHub data
-  const githubData = await getGitHubData(owner, repoName);
+  const github = await getGitHubData(owner, repoName);
 
-  // Build OG image URL with real data
-  const ogParams = new URLSearchParams({
-    repo: repoName,
-    owner: owner,
-    score: "85", // Default score - will show actual after analysis
-    stars: githubData ? formatStars(githubData.stars) : "0",
-    language: githubData?.language || "Unknown",
-  });
+  const title = `${repoFullName} - Repository Analysis | RepoGist`;
 
-  const ogImageUrl = `${BASE_URL}/api/og?${ogParams.toString()}`;
-  const shareUrl = `${BASE_URL}/share/${repoFullName}`;
   const description =
-    githubData?.description || `AI-powered analysis of ${repoFullName}`;
+    github?.description && github.description.length >= 100
+      ? github.description
+      : `Code analysis for ${repoFullName}. Get insights on code quality, architecture, security vulnerabilities, and actionable improvement suggestions on RepoGist.`;
+
+  const ogImageUrl = `${BASE_URL}/api/og?repo=${encodeURIComponent(
+    repoName
+  )}&owner=${encodeURIComponent(owner)}&stars=${
+    github ? formatStars(github.stars) : "0"
+  }&language=${encodeURIComponent(github?.language || "Unknown")}&score=85`;
 
   return {
-    title: `${repoFullName} Analysis | RepoGist`,
-    description: description,
+    metadataBase: new URL(BASE_URL),
+    title,
+    description,
     openGraph: {
-      title: `${repoFullName} - Repository Analysis`,
-      description: description,
-      type: "website",
+      title,
+      description,
+      url: `${BASE_URL}/share/${repoFullName}`,
       siteName: "RepoGist",
-      url: shareUrl,
+      type: "website",
       images: [
         {
           url: ogImageUrl,
@@ -94,8 +96,8 @@ export async function generateMetadata({
     },
     twitter: {
       card: "summary_large_image",
-      title: `${repoFullName} Analysis`,
-      description: description,
+      title,
+      description,
       images: [ogImageUrl],
     },
   };
@@ -108,7 +110,5 @@ export default async function SharePage({ params }: SharePageProps) {
     notFound();
   }
 
-  const repoFullName = repo.join("/");
-
-  return <SharePageClient repoFullName={repoFullName} />;
+  return <SharePageClient repoFullName={repo.join("/")} />;
 }

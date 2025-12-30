@@ -79,56 +79,48 @@ function formatNumberShort(num: number): string {
   return num.toString();
 }
 
-const BASE_URL = "https://repo-gist.vercel.app";
+const SITE_URL = "https://repo-gist.vercel.app";
 
-// Generate CLEAN share URL (no query params - short and clean)
-export function generateShareUrl(data: ShareCardData): string {
-  return `${BASE_URL}/share/${data.repoFullName}`;
-}
-
-// Generate OG image URL with minimal params (used internally)
-export function generateOgImageUrl(data: ShareCardData): string {
-  const params = new URLSearchParams({
-    repo: data.repoName,
-    owner: data.ownerLogin,
-    score: data.overallScore.toString(),
-    stars: formatNumberShort(data.stars),
-    lang: data.language || "",
-  });
-
-  return `${BASE_URL}/api/og?${params.toString()}`;
-}
-
-// Twitter share - clean URL, score in text
-export function generateTwitterShareText(data: ShareCardData): string {
-  const scoreEmoji =
-    data.overallScore >= 80 ? "🟢" : data.overallScore >= 60 ? "🟡" : "🔴";
-
-  return `🔍 Analyzed ${data.repoFullName} with @RepoGist
-
-${scoreEmoji} Score: ${data.overallScore}/100
-⭐ ${formatNumberShort(data.stars)} stars
-🛠️ ${data.language || "Multiple languages"}
-
-Check it out:`;
+export function generateShareUrl(): string {
+  return SITE_URL;
 }
 
 export function generateTwitterShareUrl(data: ShareCardData): string {
-  const text = generateTwitterShareText(data);
-  const url = generateShareUrl(data); // Clean URL without params
+  const scoreEmoji =
+    data.overallScore >= 80 ? "🟢" : data.overallScore >= 60 ? "🟡" : "🔴";
+
+  const text = `🔍 Just analyzed ${data.repoFullName} using RepoGist!
+
+${scoreEmoji} Score: ${data.overallScore}/100
+⭐ Stars: ${formatNumberShort(data.stars)}
+💻 Language: ${data.language || "Multiple"}
+🛠️ Tech: ${data.techStack.slice(0, 3).join(", ") || "Various"}
+
+Analyze any GitHub repo instantly 👇`;
 
   return `https://twitter.com/intent/tweet?text=${encodeURIComponent(
     text
-  )}&url=${encodeURIComponent(url)}`;
+  )}&url=${encodeURIComponent(SITE_URL)}`;
 }
 
-// LinkedIn share - using shareArticle with clean URL
 export function generateLinkedInShareUrl(data: ShareCardData): string {
-  const url = generateShareUrl(data); // Clean URL
+  const text = `🔍 Just analyzed ${data.repoFullName} of using RepoGist!
 
-  return `https://www.linkedin.com/shareArticle?mini=true&url=${encodeURIComponent(
-    url
+📊 Score: ${data.overallScore}/100
+⭐ Stars: ${formatNumberShort(data.stars)}
+💻 Language: ${data.language || "Multiple"}
+
+RepoGist helps you instantly understand any GitHub repository using AI. Try it out!
+
+${SITE_URL}`;
+
+  return `https://www.linkedin.com/feed/?shareActive=true&text=${encodeURIComponent(
+    text
   )}`;
+}
+
+export function generateCopyLink(): string {
+  return SITE_URL;
 }
 
 export async function copyToClipboard(text: string): Promise<boolean> {
@@ -181,4 +173,12 @@ export async function downloadAsImage(
     console.error("Failed to download image:", error);
     return false;
   }
+}
+
+export function redirectToTwitter(data: ShareCardData): void {
+  window.location.href = generateTwitterShareUrl(data);
+}
+
+export function redirectToLinkedIn(data: ShareCardData): void {
+  window.location.href = generateLinkedInShareUrl(data);
 }

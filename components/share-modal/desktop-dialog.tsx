@@ -73,9 +73,9 @@ export function DesktopDialog({
         {/* Content */}
         <div className="flex flex-row flex-1 overflow-hidden">
           {/* Left: Preview Area */}
-          <div className="flex-1 flex flex-col bg-zinc-950 min-h-0">
+          <div className="flex-1 flex flex-col bg-background min-h-0">
             {/* Variant Selector */}
-            <div className="flex items-center justify-center gap-2 p-4 bg-zinc-900/50 border-b border-zinc-800 shrink-0">
+            <div className="flex items-center justify-center gap-2 p-4  border-b shrink-0">
               {VARIANTS.map((v) => (
                 <button
                   key={v.id}
@@ -84,7 +84,7 @@ export function DesktopDialog({
                     "px-4 py-2 rounded-lg text-sm font-medium transition-all",
                     variant === v.id
                       ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
-                      : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800"
+                      : "text-muted-foreground"
                   )}
                 >
                   {v.label}
@@ -119,7 +119,7 @@ export function DesktopDialog({
           </div>
 
           {/* Right: Actions Panel */}
-          <div className="w-72 xl:w-80 border-l border-border bg-card shrink-0">
+          <div className="w-72 xl:w-80 border-l border-border shrink-0">
             <ScrollArea className="h-full">
               <div className="p-5 space-y-5">
                 {/* Download Section */}
@@ -136,16 +136,13 @@ export function DesktopDialog({
                       <>
                         <HugeiconsIcon
                           icon={Loading01Icon}
-                          className="w-4 h-4"	
+                          className="w-4 h-4"
                         />
                         Generating...
                       </>
                     ) : downloadSuccess ? (
                       <>
-                        <HugeiconsIcon
-                          icon={Tick01Icon}
-                          className="w-4 h-4"
-                        />
+                        <HugeiconsIcon icon={Tick01Icon} className="w-4 h-4" />
                         Downloaded!
                       </>
                     ) : (
@@ -177,10 +174,7 @@ export function DesktopDialog({
                   >
                     {copied ? (
                       <>
-                        <HugeiconsIcon
-                          icon={Tick01Icon}
-                          className="w-4 h-4"
-                        />
+                        <HugeiconsIcon icon={Tick01Icon} className="w-4 h-4" />
                         Copied!
                       </>
                     ) : (

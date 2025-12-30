@@ -74,7 +74,7 @@ export function MobileDrawer({
 
         <div className="flex-1 overflow-hidden">
           {/* Variant Selector */}
-          <div className="flex items-center justify-center gap-1 px-4 py-2 border-b border-border bg-muted/30">
+          <div className="flex items-center border-t justify-center gap-1 px-4 py-2 border-b border-border bg-background">
             {VARIANTS.map((v) => (
               <button
                 key={v.id}
@@ -113,7 +113,7 @@ export function MobileDrawer({
           </ScrollArea>
 
           {/* Quick Actions Grid */}
-          <div className="p-4 space-y-3 border-t border-border">
+          <div className="p-4 space-y-3 border-t bg-background border-border">
             {/* Primary Action */}
             <Button
               onClick={handleDownload}

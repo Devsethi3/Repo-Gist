@@ -4,9 +4,9 @@ import { useState, useRef, useCallback, useMemo } from "react";
 import {
   ShareCardData,
   createShareData,
-  generateShareUrl,
-  generateTwitterShareUrl,
-  generateLinkedInShareUrl,
+  generateCopyLink,
+  redirectToTwitter,
+  redirectToLinkedIn,
   copyToClipboard,
   downloadAsImage,
 } from "@/lib/share";
@@ -32,26 +32,21 @@ export function ShareModal({ open, onOpenChange, result }: ShareModalProps) {
   const currentVariant = VARIANTS.find((v) => v.id === variant);
 
   const handleCopyLink = useCallback(async () => {
-    if (!shareData) return;
-    // Copy CLEAN URL (no query params)
-    const url = generateShareUrl(shareData);
-    const success = await copyToClipboard(url);
+    const success = await copyToClipboard(generateCopyLink());
     if (success) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
-  }, [shareData]);
+  }, []);
 
   const handleDownload = useCallback(async () => {
     if (!cardRef.current || !shareData) return;
     setDownloading(true);
-
     try {
       const success = await downloadAsImage(
         cardRef.current,
         `repogist-${shareData.repoName.toLowerCase().replace(/\s+/g, "-")}`
       );
-
       if (success) {
         setDownloadSuccess(true);
         setTimeout(() => setDownloadSuccess(false), 2500);
@@ -63,20 +58,12 @@ export function ShareModal({ open, onOpenChange, result }: ShareModalProps) {
 
   const handleTwitterShare = useCallback(() => {
     if (!shareData) return;
-    window.open(
-      generateTwitterShareUrl(shareData),
-      "_blank",
-      "noopener,noreferrer,width=600,height=400"
-    );
+    redirectToTwitter(shareData);
   }, [shareData]);
 
   const handleLinkedInShare = useCallback(() => {
     if (!shareData) return;
-    window.open(
-      generateLinkedInShareUrl(shareData),
-      "_blank",
-      "noopener,noreferrer,width=600,height=600"
-    );
+    redirectToLinkedIn(shareData);
   }, [shareData]);
 
   if (!shareData) return null;
@@ -98,9 +85,9 @@ export function ShareModal({ open, onOpenChange, result }: ShareModalProps) {
     handleLinkedInShare,
   };
 
-  if (isMobile) {
-    return <MobileDrawer {...sharedProps} />;
-  }
-
-  return <DesktopDialog {...sharedProps} />;
+  return isMobile ? (
+    <MobileDrawer {...sharedProps} />
+  ) : (
+    <DesktopDialog {...sharedProps} />
+  );
 }

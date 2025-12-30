@@ -21,7 +21,7 @@ import { cn } from "@/lib/utils";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   AlertCircleIcon,
-  RotateLeft01Icon,
+  Rotate01Icon,
   GitBranchIcon,
   WorkflowSquare10Icon,
   Wrench01Icon,
@@ -89,7 +89,7 @@ export function RepoAnalyzer() {
                       className="border-border hover:bg-muted"
                     >
                       <HugeiconsIcon
-                        icon={RotateLeft01Icon}
+                        icon={Rotate01Icon}
                         className="w-4 h-4 mr-2"
                       />
                       Try Again
@@ -348,7 +348,7 @@ export function RepoAnalyzer() {
                   )}
                 >
                   <HugeiconsIcon
-                    icon={RotateLeft01Icon}
+                    icon={Rotate01Icon}
                     className={cn(
                       "w-4 h-4 mr-2 text-muted-foreground",
                       "group-hover:text-foreground",
