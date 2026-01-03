@@ -25,7 +25,7 @@
 
   <br />
 
-  <img src="/public/og-image.png" alt="RepoGist Screenshot" width="800" style="border-radius: 12px;" />
+  <img src="/public/repo-gist-showcase.png" alt="RepoGist Screenshot" width="800" style="border-radius: 12px;" />
 
 </div>
 
@@ -60,6 +60,18 @@
 | 📦 **Dependency Analysis**   | Understand package dependencies and outdated packages      |
 | 🏷️ **Tech Stack Detection**  | Automatically identify frameworks and technologies         |
 | 💡 **AI Recommendations**    | Get actionable improvement suggestions                     |
+| 🌿 **Branch Analysis**       | Analyze any branch, not just the default branch            |
+| 🔀 **Data Flow Diagram**     | Interactive Mermaid diagrams showing data flow patterns    |
+
+### Export & Sharing
+
+| Feature                     | Description                                             |
+| --------------------------- | ------------------------------------------------------- |
+| 📋 **Copy Plain Text**      | Copy the analysis report as formatted plain text        |
+| 📝 **Copy Markdown**        | Copy the full report in Markdown format for docs/issues |
+| 📥 **Download PDF Report**  | Export a detailed PDF report with all insights (jsPDF)  |
+| 📤 **Social Sharing**       | Share analysis on Twitter, LinkedIn, or copy link       |
+| 🖼️ **Download Share Cards** | Export beautiful share cards as images                  |
 
 ### User Experience
 
@@ -67,8 +79,6 @@
 | ---------------------------- | -------------------------------------------------- |
 | 📁 **Interactive File Tree** | Explore repository structure with file statistics  |
 | 🔄 **Real-time Progress**    | Watch the analysis happen live with status updates |
-| 📤 **Social Sharing**        | Share analysis on Twitter, LinkedIn, or copy link  |
-| 📥 **Download Cards**        | Export beautiful share cards as images             |
 | 🌙 **Dark/Light Mode**       | Beautiful themes for any preference                |
 | 📱 **Fully Responsive**      | Works seamlessly on desktop, tablet, and mobile    |
 | ⚡ **Lightning Fast**        | Built with Next.js 16 for optimal performance      |
@@ -220,6 +230,18 @@ CACHE_TTL=3600
     </td>
   </tr>
   <tr>
+    <td><b>Diagrams</b></td>
+    <td>
+      <img src="https://img.shields.io/badge/Mermaid-FF3670?style=flat-square&logo=mermaid&logoColor=white" />
+    </td>
+  </tr>
+  <tr>
+    <td><b>PDF Export</b></td>
+    <td>
+      <img src="https://img.shields.io/badge/jsPDF-000000?style=flat-square" />
+    </td>
+  </tr>
+  <tr>
     <td><b>AI</b></td>
     <td>
       <img src="https://img.shields.io/badge/OpenRouter-000000?style=flat-square" />
@@ -243,6 +265,9 @@ CACHE_TTL=3600
   "tailwindcss": "^4.0.0",
   "framer-motion": "^11.0.0",
   "@radix-ui/react-*": "latest",
+  "mermaid": "^11.0.0",
+  "jspdf": "^2.5.0",
+  "jspdf-autotable": "^3.8.0",
   "html-to-image": "^1.11.0"
 }
 ```
@@ -274,6 +299,7 @@ repo-gist/
 │   ├── repo-analyzer/            # Main analyzer
 │   │   ├── index.tsx
 │   │   ├── animations.ts
+│   │   ├── branch-selector.tsx   # Branch selection dropdown
 │   │   └── section-header.tsx
 │   ├── share-card/               # Share card variants
 │   │   ├── index.tsx
@@ -283,22 +309,34 @@ repo-gist/
 │   │   ├── index.tsx
 │   │   ├── desktop-dialog.tsx
 │   │   └── mobile-drawer.tsx
+│   ├── export/                   # Export functionality
+│   │   ├── copy-plain-text.tsx   # Plain text export
+│   │   ├── copy-markdown.tsx     # Markdown export
+│   │   └── download-pdf.tsx      # PDF export (jsPDF)
 │   ├── file-tree/                # File explorer
 │   ├── score-card/               # Score display
 │   ├── ai-insights/              # AI recommendations
 │   ├── architecture-diagram/     # Architecture viz
-│   └── data-flow-diagram/        # Data flow viz
+│   └── data-flow-diagram/        # Data flow viz (Mermaid)
+│       ├── index.tsx
+│       ├── mermaid-renderer.tsx  # Mermaid diagram component
+│       └── types.ts
 │
 ├── lib/                          # Utilities & Core Logic
 │   ├── ai.ts                     # AI integration
 │   ├── github.ts                 # GitHub API client
 │   ├── share.ts                  # Share utilities
+│   ├── export/                   # Export utilities
+│   │   ├── plain-text.ts         # Plain text formatter
+│   │   ├── markdown.ts           # Markdown formatter
+│   │   └── pdf.ts                # PDF generator (jsPDF)
 │   ├── types.ts                  # TypeScript types
 │   ├── utils.ts                  # Helper functions
 │   └── constants.ts              # App constants
 │
 ├── hooks/                        # Custom React Hooks
 │   ├── use-analysis.ts           # Analysis state management
+│   ├── use-branches.ts           # Branch fetching hook
 │   ├── use-media-query.ts        # Responsive hooks
 │   └── use-local-storage.ts      # Persistent storage
 │
@@ -331,11 +369,20 @@ repo-gist/
    https://github.com/vercel/next.js
    ```
 
-2. **Start Analysis**
+2. **Select a Branch (Optional)**
+
+   Use the branch selector dropdown to choose which branch to analyze:
+
+   - `main` (default)
+   - `develop`
+   - `feature/new-feature`
+   - Any available branch
+
+3. **Start Analysis**
 
    Click the **"Analyze"** button or press `Enter`
 
-3. **View Results**
+4. **View Results**
 
    Explore the comprehensive analysis including:
 
@@ -343,7 +390,125 @@ repo-gist/
    - File structure visualization
    - AI-powered insights
    - Architecture diagrams
+   - Data flow diagrams (Mermaid)
    - Improvement suggestions
+
+### Branch Analysis
+
+RepoGist now supports analyzing any branch in a repository:
+
+```
+https://github.com/vercel/next.js
+Branch: canary
+```
+
+1. Enter the repository URL
+2. Click the **branch dropdown** next to the input
+3. Select the desired branch from the list
+4. Click **Analyze** to analyze that specific branch
+
+### Export Options
+
+After analyzing a repository, you have multiple export options:
+
+| Option                 | Description                                  | Format |
+| ---------------------- | -------------------------------------------- | ------ |
+| 📋 **Copy Plain Text** | Copy a formatted text summary to clipboard   | `.txt` |
+| 📝 **Copy Markdown**   | Copy full report in Markdown for docs/README | `.md`  |
+| 📥 **Download PDF**    | Download a detailed PDF report with all data | `.pdf` |
+| 🖼️ **Download Image**  | Save the share card as an image              | `.png` |
+| 🔗 **Copy Share Link** | Copy a shareable URL to the analysis         | URL    |
+
+#### Copy Plain Text
+
+```
+Repository: vercel/next.js
+Branch: main
+Health Score: 92/100
+
+Scores:
+- Code Quality: 95/100
+- Documentation: 90/100
+- Security: 88/100
+- Maintainability: 94/100
+
+Tech Stack: TypeScript, React, Next.js, Turbopack
+
+Key Insights:
+✓ Excellent documentation with comprehensive API docs
+⚠ 5 dependencies have newer versions available
+...
+```
+
+#### Copy Markdown
+
+```markdown
+# Repository Analysis: vercel/next.js
+
+**Branch:** `main`  
+**Health Score:** 92/100 ⭐
+
+## Scores
+
+| Category        | Score |
+| --------------- | ----- |
+| Code Quality    | 95    |
+| Documentation   | 90    |
+| Security        | 88    |
+| Maintainability | 94    |
+
+## Tech Stack
+
+- TypeScript
+- React
+- Next.js
+- Turbopack
+
+## Key Insights
+
+### Strengths
+
+- ✅ Excellent documentation with comprehensive API docs
+
+### Suggestions
+
+- ⚠️ 5 dependencies have newer versions available
+  ...
+```
+
+#### Download PDF
+
+The PDF report includes:
+
+- Cover page with repository info and score
+- Detailed score breakdown with visualizations
+- Complete tech stack analysis
+- AI-powered insights and recommendations
+- Architecture overview
+- Data flow diagrams
+- File statistics
+- Actionable improvement suggestions
+
+### Data Flow Diagram
+
+RepoGist generates interactive Mermaid diagrams showing how data flows through your application:
+
+```mermaid
+flowchart TD
+    A[User Input] --> B[API Routes]
+    B --> C[GitHub API]
+    C --> D[Data Processing]
+    D --> E[AI Analysis]
+    E --> F[Results Display]
+    F --> G[Export Options]
+```
+
+The data flow diagram shows:
+
+- Component interactions
+- Data transformation steps
+- External service connections
+- State management flow
 
 ### Example Repositories
 
@@ -393,14 +558,16 @@ Content-Type: application/json
 ```json
 {
   "repoUrl": "https://github.com/owner/repo",
+  "branch": "main",
   "forceRefresh": false
 }
 ```
 
-| Parameter      | Type    | Required | Description                                |
-| -------------- | ------- | -------- | ------------------------------------------ |
-| `repoUrl`      | string  | Yes      | Full GitHub repository URL                 |
-| `forceRefresh` | boolean | No       | Skip cache and re-analyze (default: false) |
+| Parameter      | Type    | Required | Description                                 |
+| -------------- | ------- | -------- | ------------------------------------------- |
+| `repoUrl`      | string  | Yes      | Full GitHub repository URL                  |
+| `branch`       | string  | No       | Branch to analyze (default: default branch) |
+| `forceRefresh` | boolean | No       | Skip cache and re-analyze (default: false)  |
 
 #### Response
 
@@ -418,6 +585,7 @@ Content-Type: application/json
       "stars": 120000,
       "forks": 25000,
       "language": "TypeScript",
+      "branch": "main",
       "owner": {
         "login": "vercel",
         "avatarUrl": "https://avatars.githubusercontent.com/u/..."
@@ -454,7 +622,18 @@ Content-Type: application/json
       "languages": { "TypeScript": 85, "JavaScript": 10, "CSS": 5 }
     },
     "architecture": [ ... ],
-    "dataFlow": { "nodes": [...], "edges": [...] },
+    "dataFlow": {
+      "nodes": [
+        { "id": "1", "label": "User Input", "type": "input" },
+        { "id": "2", "label": "API Routes", "type": "process" },
+        { "id": "3", "label": "GitHub API", "type": "external" }
+      ],
+      "edges": [
+        { "from": "1", "to": "2", "label": "request" },
+        { "from": "2", "to": "3", "label": "fetch" }
+      ],
+      "mermaid": "flowchart TD\n    A[User Input] --> B[API Routes]\n    B --> C[GitHub API]"
+    },
     "refactors": [ ... ],
     "automations": [ ... ],
     "summary": "Next.js is a well-maintained React framework..."
@@ -482,6 +661,16 @@ Content-Type: application/json
 }
 ```
 
+**Error (422):**
+
+```json
+{
+  "success": false,
+  "error": "Branch not found",
+  "code": "BRANCH_NOT_FOUND"
+}
+```
+
 **Error (429):**
 
 ```json
@@ -493,6 +682,32 @@ Content-Type: application/json
 }
 ```
 
+### Get Branches
+
+Fetches all available branches for a repository.
+
+```http
+GET /api/branches?repo=owner/repo
+```
+
+#### Response
+
+**Success (200):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "branches": [
+      { "name": "main", "protected": true, "default": true },
+      { "name": "develop", "protected": false, "default": false },
+      { "name": "feature/new-ui", "protected": false, "default": false }
+    ],
+    "defaultBranch": "main"
+  }
+}
+```
+
 #### Example Usage
 
 **cURL:**
@@ -500,7 +715,7 @@ Content-Type: application/json
 ```bash
 curl -X POST https://repo-gist.vercel.app/api/analyze \
   -H "Content-Type: application/json" \
-  -d '{"repoUrl": "https://github.com/vercel/next.js"}'
+  -d '{"repoUrl": "https://github.com/vercel/next.js", "branch": "canary"}'
 ```
 
 **JavaScript/TypeScript:**
@@ -511,11 +726,13 @@ const response = await fetch("/api/analyze", {
   headers: { "Content-Type": "application/json" },
   body: JSON.stringify({
     repoUrl: "https://github.com/vercel/next.js",
+    branch: "canary",
   }),
 });
 
 const data = await response.json();
 console.log(data.data.scores.overall); // 92
+console.log(data.data.dataFlow.mermaid); // Mermaid diagram code
 ```
 
 ---
@@ -557,10 +774,16 @@ pnpm lint:fix && pnpm format
 ```bash
 curl -X POST http://localhost:3000/api/analyze \
   -H "Content-Type: application/json" \
-  -d '{"repoUrl": "https://github.com/facebook/react"}'
+  -d '{"repoUrl": "https://github.com/facebook/react", "branch": "main"}'
 ```
 
-2. **Test Share Page:**
+2. **Test Branch Fetching:**
+
+```bash
+curl "http://localhost:3000/api/branches?repo=facebook/react"
+```
+
+3. **Test Share Page:**
 
 ```
 http://localhost:3000/share/facebook/react
@@ -690,9 +913,16 @@ See the [LICENSE](LICENSE) file for details.
 - [ ] 📈 **Team Dashboard** - Analyze multiple repos at once
 - [ ] 🤖 **GitHub Action** - Integrate into CI/CD pipeline
 - [ ] 📱 **Mobile App** - Native iOS and Android apps
+- [ ] 🔍 **Compare Branches** - Side-by-side branch comparison
+- [ ] 📧 **Email Reports** - Schedule automated email reports
 
 ### Recently Completed
 
+- [x] ✅ Branch analysis support
+- [x] ✅ Data flow diagrams (Mermaid)
+- [x] ✅ Copy as plain text
+- [x] ✅ Copy as Markdown
+- [x] ✅ Download PDF report (jsPDF)
 - [x] ✅ Social sharing (Twitter, LinkedIn)
 - [x] ✅ Download as image
 - [x] ✅ Dark/Light mode
@@ -725,6 +955,25 @@ Currently, only public repositories are supported. Private repository support is
 </details>
 
 <details>
+<summary><b>Can I analyze different branches?</b></summary>
+
+Yes! Use the branch selector dropdown to choose any available branch in the repository before analyzing.
+
+</details>
+
+<details>
+<summary><b>What export formats are supported?</b></summary>
+
+RepoGist supports multiple export formats:
+
+- **Plain Text** - Simple formatted text for quick sharing
+- **Markdown** - Full report in Markdown format for documentation
+- **PDF** - Detailed PDF report with all insights and diagrams
+- **Image** - Share card as PNG image
+
+</details>
+
+<details>
 <summary><b>How accurate is the analysis?</b></summary>
 
 RepoGist uses advanced AI models to analyze code patterns, but results should be considered as suggestions rather than absolute truths. Always use your own judgment.
@@ -738,6 +987,13 @@ RepoGist can analyze repositories in any programming language. The AI model unde
 
 </details>
 
+<details>
+<summary><b>What is the data flow diagram?</b></summary>
+
+The data flow diagram is an interactive Mermaid visualization that shows how data moves through your application, including component interactions, external service calls, and state management patterns.
+
+</details>
+
 ---
 
 ## 🙏 Acknowledgments
@@ -748,6 +1004,8 @@ Special thanks to these amazing projects:
 - [shadcn/ui](https://ui.shadcn.com/) - Beautiful, accessible components
 - [Tailwind CSS](https://tailwindcss.com/) - Utility-first CSS framework
 - [Framer Motion](https://www.framer.com/motion/) - Animation library
+- [Mermaid](https://mermaid.js.org/) - Diagramming and charting library
+- [jsPDF](https://github.com/parallax/jsPDF) - PDF generation library
 - [OpenRouter](https://openrouter.ai/) - AI model gateway
 - [Vercel](https://vercel.com/) - Deployment platform
 - [Lucide](https://lucide.dev/) - Beautiful icons
