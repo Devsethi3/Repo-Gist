@@ -1,3 +1,5 @@
+// components/repo-analyzer/animations.ts 
+
 import { Variants } from "framer-motion";
 
 export const fadeIn: Variants = {

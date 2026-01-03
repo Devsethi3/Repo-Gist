@@ -1,8 +1,11 @@
+// api/analyze/route.ts
+
 import { streamText } from "ai";
 import {
   fetchRepoMetadata,
   fetchRepoTree,
   fetchImportantFiles,
+  fetchRepoBranches,
   calculateFileStats,
   createCompactTreeString,
 } from "@/lib/github";
@@ -100,16 +103,35 @@ export async function POST(request: Request) {
 
     const model = openrouter.chat(MODEL_ID);
 
-    let metadata, tree, importantFiles;
+    // Fetch metadata first to get default branch
+    let metadata;
     try {
-      [metadata, tree, importantFiles] = await Promise.all([
-        fetchRepoMetadata(owner, repo),
-        fetchRepoTree(owner, repo),
-        fetchImportantFiles(owner, repo),
-      ]);
+      metadata = await fetchRepoMetadata(owner, repo);
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Failed to fetch repository";
+      console.error("GitHub metadata fetch error:", error);
+      return Response.json({ error: message } satisfies ErrorResponse, {
+        status: 400,
+      });
+    }
+
+    // Determine which branch to analyze
+    const targetBranch = parsedBody.branch || metadata.defaultBranch;
+
+    // Fetch branches, tree, and files in parallel
+    let tree, importantFiles, branches;
+    try {
+      [tree, importantFiles, branches] = await Promise.all([
+        fetchRepoTree(owner, repo, targetBranch),
+        fetchImportantFiles(owner, repo, targetBranch),
+        fetchRepoBranches(owner, repo, metadata.defaultBranch),
+      ]);
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Failed to fetch repository data";
       console.error("GitHub fetch error:", error);
       return Response.json({ error: message } satisfies ErrorResponse, {
         status: 400,
@@ -125,6 +147,7 @@ export async function POST(request: Request) {
       fileStats,
       compactTree,
       filesContent,
+      branch: targetBranch,
     });
 
     const result = await streamText({
@@ -134,11 +157,13 @@ export async function POST(request: Request) {
       maxOutputTokens: AI_CONFIG.maxOutputTokens,
     });
 
-    // Create and return the stream
+    // Create and return the stream with branch info
     const stream = createAnalysisStream(
       metadata,
       tree,
       fileStats,
+      targetBranch,
+      branches,
       result.textStream
     );
 

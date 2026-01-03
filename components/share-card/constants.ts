@@ -1,3 +1,5 @@
+// components/share-card/constants.ts 
+
 import { TierStyle, ScoreTier } from "./types";
 
 export const TIER_STYLES: Record<ScoreTier, TierStyle> = {

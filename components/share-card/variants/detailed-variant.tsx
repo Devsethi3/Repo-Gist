@@ -1,5 +1,14 @@
+// components/share-card/variants/detailed-variant.tsx
+
 import { forwardRef } from "react";
-import { Code, Shield, FileText, Wrench, Terminal } from "lucide-react";
+import {
+  Code,
+  Shield,
+  FileText,
+  Wrench,
+  Terminal,
+  GitBranch,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ShareCardData } from "@/lib/share";
 import { ScoreConfig, MetricItem } from "../types";
@@ -47,7 +56,7 @@ export const DetailedVariant = forwardRef<HTMLDivElement, DetailedVariantProps>(
 
     return (
       <div ref={ref} className="w-full max-w-85 sm:max-w-120 md:max-w-150">
-        <TechnicalFrame config={config}>
+        <TechnicalFrame config={config} branch={data.branch}>
           <div className={cn(CARD_BASE_CLASSES, className)}>
             <div className="p-3 sm:p-5 md:p-6 relative z-10">
               {/* Header */}
@@ -76,9 +85,22 @@ export const DetailedVariant = forwardRef<HTMLDivElement, DetailedVariantProps>(
                         {config.label}
                       </span>
                     </div>
-                    <p className="text-xs sm:text-sm text-zinc-400 jetbrains-mono mb-1 sm:mb-2 truncate">
-                      @{data.ownerLogin}
-                    </p>
+                    <div className="flex items-center gap-1.5 sm:gap-2 mb-1 sm:mb-2 flex-wrap">
+                      <p className="text-xs sm:text-sm text-zinc-400 jetbrains-mono truncate">
+                        @{data.ownerLogin}
+                      </p>
+                      {data.branch && (
+                        <>
+                          <span className="text-zinc-700">/</span>
+                          <span className="flex items-center gap-0.5 text-xs sm:text-sm text-zinc-500 jetbrains-mono">
+                            <GitBranch className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                            <span className="max-w-20 sm:max-w-32 truncate">
+                              {data.branch}
+                            </span>
+                          </span>
+                        </>
+                      )}
+                    </div>
                     {data.description && (
                       <p className="text-[10px] sm:text-xs text-zinc-500 line-clamp-1 sm:line-clamp-2 jetbrains-mono max-w-full sm:max-w-70 md:max-w-75">
                         {data.description}
@@ -157,6 +179,12 @@ export const DetailedVariant = forwardRef<HTMLDivElement, DetailedVariantProps>(
                       {formatNumber(data.forks)}
                     </span>
                   </div>
+                  {data.language && (
+                    <div className="hidden sm:flex items-center gap-1.5 sm:gap-2 jetbrains-mono">
+                      <span className="text-zinc-600">LANG</span>
+                      <span className="text-zinc-300">{data.language}</span>
+                    </div>
+                  )}
                 </div>
 
                 {showWatermark && (

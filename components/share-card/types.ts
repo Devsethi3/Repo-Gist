@@ -17,6 +17,7 @@ export interface TechPillProps {
 export interface TechnicalFrameProps {
   children: React.ReactNode;
   config: ScoreConfig;
+  branch?: string;
   className?: string;
 }
 
@@ -47,4 +48,11 @@ export interface BreakdownItem {
   l: string;
   short: string;
   v: number;
+}
+
+export interface VariantProps {
+  data: ShareCardData;
+  config: ScoreConfig;
+  showWatermark?: boolean;
+  className?: string;
 }

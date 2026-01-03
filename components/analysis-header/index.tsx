@@ -1,3 +1,5 @@
+// components/analysis-header/index.tsx
+
 "use client";
 
 import { useState, useMemo, useCallback } from "react";
@@ -17,17 +19,17 @@ import { InfoSection } from "./info-section";
 import { TechBadge } from "./tech-badge";
 import { CommandStep } from "./command-step";
 import { FolderCard } from "./folder-card";
+import { BranchSelector } from "./branch-selector";
+import { ExportActions } from "./export-actions";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   GithubIcon,
   StarIcon,
   GitForkIcon,
   ViewIcon,
-  FolderLinksIcon,
   SourceCodeIcon,
   LicenseIcon,
   Copy01Icon,
-  GitBranchIcon,
   Clock01Icon,
   UserMultiple02Icon,
   ComputerTerminal01Icon,
@@ -46,6 +48,10 @@ export function AnalysisHeader({
   techStack,
   summary,
   result,
+  branch,
+  availableBranches,
+  onBranchChange,
+  isLoading = false,
 }: AnalysisHeaderProps) {
   const [copied, setCopied] = useState(false);
   const [shareModalOpen, setShareModalOpen] = useState(false);
@@ -59,13 +65,15 @@ export function AnalysisHeader({
   }, [metadata.fullName]);
 
   const shareResult: Partial<AnalysisResult> = useMemo(() => {
-    if (result) return result;
-    return { metadata, techStack, summary };
-  }, [result, metadata, techStack, summary]);
+    if (result) return { ...result, branch };
+    return { metadata, techStack, summary, branch };
+  }, [result, metadata, techStack, summary, branch]);
 
   const extendedAnalysis = useMemo(() => {
     return generateExtendedAnalysis(metadata, techStack, result);
   }, [metadata, techStack, result]);
+
+  const currentBranch = branch || metadata.defaultBranch;
 
   const stats: StatItem[] = useMemo(
     () => [
@@ -104,7 +112,7 @@ export function AnalysisHeader({
         <div className="p-4 sm:p-6">
           {/* Top Row: Avatar, Info, Actions */}
           <div className="flex gap-3 sm:gap-4">
-            {/* Avatar with primary accent ring */}
+            {/* Avatar */}
             <div className="relative shrink-0 flex items-start justify-center">
               <Image
                 src={metadata.owner.avatarUrl}
@@ -143,19 +151,22 @@ export function AnalysisHeader({
                   @{metadata.owner.login}
                 </Link>
               </p>
-
-              {metadata.description && (
-                <p className="hidden sm:block text-sm text-muted-foreground leading-relaxed line-clamp-1 pt-1">
-                  {metadata.description}
-                </p>
-              )}
             </div>
 
             {/* Desktop Actions */}
-            <div className="hidden sm:flex items-start gap-1.5 shrink-0">
+            <div className="hidden sm:flex items-start gap-2 shrink-0">
+              {/* Export Actions - NEW */}
+              <ExportActions result={shareResult} />
+
+              {/* Divider */}
+              <div className="w-px h-10 bg-border/50 mx-1" />
+
+              {/* Share & GitHub */}
               <Button
                 variant="outline"
+                size="sm"
                 onClick={() => setShareModalOpen(true)}
+                className="h-10 gap-1.5"
               >
                 <HugeiconsIcon icon={SentIcon} className="w-4 h-4" />
                 Share
@@ -163,6 +174,7 @@ export function AnalysisHeader({
               <Button
                 variant="outline"
                 size="icon"
+                className="h-10 w-10"
                 onClick={handleCopyUrl}
               >
                 {copied ? (
@@ -174,10 +186,7 @@ export function AnalysisHeader({
                   <HugeiconsIcon icon={Copy01Icon} className="w-4 h-4" />
                 )}
               </Button>
-              <Button
-                variant="outline"
-                asChild
-              >
+              <Button variant="outline" size="sm" className="h-10" asChild>
                 <Link
                   href={`https://github.com/${metadata.fullName}`}
                   target="_blank"
@@ -193,15 +202,31 @@ export function AnalysisHeader({
             </div>
           </div>
 
-          {/* Description - Mobile only */}
+          {/* Description - Full width row below avatar/info/actions */}
           {metadata.description && (
-            <p className="sm:hidden text-sm text-muted-foreground leading-relaxed line-clamp-2 mt-3">
+            <p className="text-sm text-muted-foreground leading-relaxed mt-3 sm:mt-4">
               {metadata.description}
             </p>
           )}
 
           {/* Meta Badges Row */}
           <div className="mt-4">
+            {/* Mobile: Full-width Branch Selector */}
+            {availableBranches &&
+              availableBranches.length > 1 &&
+              onBranchChange && (
+                <div className="sm:hidden mb-3">
+                  <BranchSelector
+                    currentBranch={currentBranch}
+                    branches={availableBranches}
+                    onBranchChange={onBranchChange}
+                    disabled={isLoading}
+                    fullWidth
+                  />
+                </div>
+              )}
+
+            {/* Scrollable badges */}
             <ScrollArea className="w-full">
               <div className="flex items-center gap-1.5 pb-1">
                 {metadata.language && (
@@ -219,13 +244,40 @@ export function AnalysisHeader({
                     {metadata.license}
                   </Badge>
                 )}
-                {metadata.defaultBranch && (
+                {/* Branch Selector - Desktop only (inline) */}
+                <div className="hidden sm:block">
+                  {availableBranches &&
+                  availableBranches.length > 0 &&
+                  onBranchChange ? (
+                    <BranchSelector
+                      currentBranch={currentBranch}
+                      branches={availableBranches}
+                      onBranchChange={onBranchChange}
+                      disabled={isLoading}
+                    />
+                  ) : (
+                    <Badge
+                      variant="secondary"
+                      className="text-[10px] sm:text-xs shrink-0 gap-1"
+                    >
+                      <HugeiconsIcon
+                        icon={SourceCodeIcon}
+                        className="w-3 h-3"
+                      />
+                      {currentBranch}
+                    </Badge>
+                  )}
+                </div>
+                {/* Mobile: Show branch as badge when no selector available */}
+                {(!availableBranches ||
+                  availableBranches.length <= 1 ||
+                  !onBranchChange) && (
                   <Badge
                     variant="secondary"
-                    className="text-[10px] sm:text-xs shrink-0 gap-1"
+                    className="text-[10px] sm:text-xs shrink-0 gap-1 sm:hidden"
                   >
-                    <HugeiconsIcon icon={GitBranchIcon} className="w-3 h-3" />
-                    {metadata.defaultBranch}
+                    <HugeiconsIcon icon={SourceCodeIcon} className="w-3 h-3" />
+                    {currentBranch}
                   </Badge>
                 )}
                 <Badge
@@ -287,16 +339,18 @@ export function AnalysisHeader({
 
           {/* Mobile Actions */}
           <div className="flex sm:hidden gap-2 mt-4">
+            <ExportActions result={shareResult} className="flex-1" />
+          </div>
+
+          {/* Mobile Secondary Actions */}
+          <div className="flex sm:hidden gap-2 mt-2">
             <Button
               variant="outline"
               size="sm"
               className="flex-1 h-9 hover:bg-primary/10 hover:text-primary hover:border-primary/30"
               onClick={() => setShareModalOpen(true)}
             >
-              <HugeiconsIcon
-                icon={SentIcon}
-                className="w-3.5 h-3.5 mr-1.5"
-              />
+              <HugeiconsIcon icon={SentIcon} className="w-3.5 h-3.5 mr-1.5" />
               Share
             </Button>
             <Button
@@ -473,3 +527,6 @@ export function AnalysisHeader({
     </>
   );
 }
+
+export { BranchSelector } from "./branch-selector";
+export { ExportActions } from "./export-actions";

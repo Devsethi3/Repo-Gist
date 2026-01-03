@@ -1,3 +1,5 @@
+// components/share-modal/desktop-dialog.tsx
+
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
@@ -26,6 +28,8 @@ import {
   Link02Icon,
   Loading01Icon,
   Image01Icon,
+  FileDownloadIcon,
+  GitBranchIcon,
 } from "@hugeicons/core-free-icons";
 
 export function DesktopDialog({
@@ -37,10 +41,12 @@ export function DesktopDialog({
   currentVariant,
   copied,
   downloading,
+  downloadingPDF,
   downloadSuccess,
   cardRef,
   handleCopyLink,
   handleDownload,
+  handleDownloadPDF,
   handleTwitterShare,
   handleLinkedInShare,
 }: DesktopDialogProps) {
@@ -60,12 +66,26 @@ export function DesktopDialog({
               <DialogTitle className="text-lg instrument-serif tracking-wider font-normal truncate">
                 Share Your Analysis
               </DialogTitle>
-              <p className="text-sm text-muted-foreground mt-0.5 truncate">
-                Create a beautiful card for{" "}
-                <span className="font-medium text-foreground">
-                  {shareData.repoFullName}
-                </span>
-              </p>
+              <div className="flex items-center gap-2 mt-0.5">
+                <p className="text-sm text-muted-foreground truncate">
+                  Create a beautiful card for{" "}
+                  <span className="font-medium text-foreground">
+                    {shareData.repoFullName}
+                  </span>
+                </p>
+                {shareData.branch && (
+                  <Badge
+                    variant="outline"
+                    className="text-[10px] gap-1 px-1.5 h-5 shrink-0"
+                  >
+                    <HugeiconsIcon
+                      icon={GitBranchIcon}
+                      className="w-2.5 h-2.5"
+                    />
+                    {shareData.branch}
+                  </Badge>
+                )}
+              </div>
             </div>
           </div>
         </DialogHeader>
@@ -75,7 +95,7 @@ export function DesktopDialog({
           {/* Left: Preview Area */}
           <div className="flex-1 flex flex-col bg-background min-h-0">
             {/* Variant Selector */}
-            <div className="flex items-center justify-center gap-2 p-4  border-b shrink-0">
+            <div className="flex items-center justify-center gap-2 p-4 border-b shrink-0">
               {VARIANTS.map((v) => (
                 <button
                   key={v.id}
@@ -136,7 +156,7 @@ export function DesktopDialog({
                       <>
                         <HugeiconsIcon
                           icon={Loading01Icon}
-                          className="w-4 h-4"
+                          className="w-4 h-4 animate-spin"
                         />
                         Generating...
                       </>
@@ -159,6 +179,93 @@ export function DesktopDialog({
                     High resolution (2x) • PNG format
                   </p>
                 </ActionSection>
+
+                <div className="h-px bg-border" />
+
+                {/* PDF Export Section */}
+                <ActionSection icon={FileDownloadIcon} title="Export Report">
+                  <Button
+                    onClick={handleDownloadPDF}
+                    disabled={downloadingPDF}
+                    variant="outline"
+                    className="w-full gap-2"
+                  >
+                    {downloadingPDF ? (
+                      <>
+                        <HugeiconsIcon
+                          icon={Loading01Icon}
+                          className="w-4 h-4 animate-spin"
+                        />
+                        Generating PDF...
+                      </>
+                    ) : (
+                      <>
+                        <HugeiconsIcon
+                          icon={FileDownloadIcon}
+                          className="w-4 h-4"
+                        />
+                        Download PDF Report
+                      </>
+                    )}
+                  </Button>
+                  {/* <p className="text-[11px] text-muted-foreground mt-2 text-center">
+                    Full analysis with scores & insights
+                  </p> */}
+                </ActionSection>
+
+                {/* <div className="h-px bg-border" /> */}
+
+                {/* Copy Summary Section */}
+                {/* <ActionSection icon={Copy01Icon} title="Copy Summary">
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button
+                      onClick={() => handleCopySummary("text")}
+                      variant="outline"
+                      size="sm"
+                      className={cn(
+                        "gap-1.5",
+                        copySummaryState === "text" &&
+                          "border-primary text-primary"
+                      )}
+                    >
+                      {copySummaryState === "text" ? (
+                        <HugeiconsIcon
+                          icon={Tick01Icon}
+                          className="w-3.5 h-3.5"
+                        />
+                      ) : (
+                        <HugeiconsIcon
+                          icon={TextIcon}
+                          className="w-3.5 h-3.5"
+                        />
+                      )}
+                      Plain Text
+                    </Button>
+                    <Button
+                      onClick={() => handleCopySummary("markdown")}
+                      variant="outline"
+                      size="sm"
+                      className={cn(
+                        "gap-1.5",
+                        copySummaryState === "markdown" &&
+                          "border-primary text-primary"
+                      )}
+                    >
+                      {copySummaryState === "markdown" ? (
+                        <HugeiconsIcon
+                          icon={Tick01Icon}
+                          className="w-3.5 h-3.5"
+                        />
+                      ) : (
+                        <HugeiconsIcon
+                          icon={DocumentCodeIcon}
+                          className="w-3.5 h-3.5"
+                        />
+                      )}
+                      Markdown
+                    </Button>
+                  </div>
+                </ActionSection> */}
 
                 <div className="h-px bg-border" />
 

@@ -1,3 +1,5 @@
+// components/file-tree/language-tags.tsx 
+
 import { memo } from "react";
 import { cn } from "@/lib/utils";
 import { LanguageTagsProps } from "./types";

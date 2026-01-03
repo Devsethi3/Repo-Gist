@@ -1,3 +1,5 @@
+// components/analysis-header/info-section.tsx
+
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -13,6 +15,7 @@ export function InfoSection({
   count,
   isHighlighted = false,
   children,
+  actions,
 }: InfoSectionProps) {
   const colors = ACCENT_COLOR_CLASSES[accentColor];
 
@@ -44,6 +47,8 @@ export function InfoSection({
             {description}
           </p>
         </div>
+        {/* Actions slot */}
+        {actions && <div className="shrink-0">{actions}</div>}
       </div>
 
       {/* Content */}

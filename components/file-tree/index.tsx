@@ -1,3 +1,5 @@
+// components/file-tree/index.tsx
+
 "use client";
 
 import { useState, useMemo, useCallback } from "react";
@@ -6,12 +8,14 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { cn, formatBytes } from "@/lib/utils";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   Search01Icon,
   Cancel01Icon,
   FolderLibraryIcon,
+  GitBranchIcon,
 } from "@hugeicons/core-free-icons";
 
 import { FileTreeProps } from "./types";
@@ -73,7 +77,7 @@ function countMatchingFiles(nodes: FileNode[], query: string): number {
   return count;
 }
 
-export function FileTree({ tree, stats }: FileTreeProps) {
+export function FileTree({ tree, stats, branch }: FileTreeProps) {
   const [searchQuery, setSearchQuery] = useState("");
 
   const topLanguages = useMemo(
@@ -97,17 +101,14 @@ export function FileTree({ tree, stats }: FileTreeProps) {
 
   const totalSize = useMemo(() => calculateTotalSize(tree), [tree]);
 
-  // Filter tree based on search query
   const filteredTree = useMemo(() => {
     return filterTree(tree, searchQuery);
   }, [tree, searchQuery]);
 
-  // Count matching files for display
   const matchCount = useMemo(() => {
     return countMatchingFiles(tree, searchQuery);
   }, [tree, searchQuery]);
 
-  // Determine if we should show empty state
   const showEmptyState =
     tree.length === 0 || (searchQuery && filteredTree.length === 0);
   const isSearchEmpty = searchQuery && filteredTree.length === 0;
@@ -128,6 +129,16 @@ export function FileTree({ tree, stats }: FileTreeProps) {
             <h3 className="text-sm font-medium text-foreground">
               File Structure
             </h3>
+            {/* Branch Badge */}
+            {branch && (
+              <Badge
+                variant="outline"
+                className="text-[10px] gap-1 px-1.5 h-5 ml-1"
+              >
+                <HugeiconsIcon icon={GitBranchIcon} className="w-2.5 h-2.5" />
+                {branch}
+              </Badge>
+            )}
           </div>
 
           {/* Stats */}

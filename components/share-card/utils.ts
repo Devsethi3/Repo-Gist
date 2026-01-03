@@ -1,3 +1,5 @@
+// components/share-card/utils.ts
+
 import { ScoreConfig, ScoreTier } from "./types";
 
 export function getScoreConfig(score: number): ScoreConfig {

@@ -1,5 +1,7 @@
+// api/analyze/types.ts
+
 import { fetchRepoMetadata, calculateFileStats } from "@/lib/github";
-import { FileNode } from "@/lib/types";
+import { FileNode, BranchInfo } from "@/lib/types";
 
 export interface EnvConfig {
   OPENROUTER_API_KEY: string;
@@ -22,6 +24,8 @@ export interface StreamEventMetadata {
     metadata: RepoMetadata;
     fileTree: FileNode[];
     fileStats: FileStats;
+    branch: string;
+    availableBranches: BranchInfo[];
   };
 }
 
@@ -50,6 +54,7 @@ export type FileStats = ReturnType<typeof calculateFileStats>;
 
 export interface AnalyzeRequestBody {
   url: string;
+  branch?: string;
 }
 
 export interface HealthCheckResponse {
@@ -70,4 +75,5 @@ export interface PromptContext {
   fileStats: FileStats;
   compactTree: string;
   filesContent: string;
+  branch: string;
 }

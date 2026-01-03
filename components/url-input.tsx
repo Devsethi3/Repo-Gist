@@ -1,3 +1,5 @@
+// components/url-input.tsx
+
 "use client";
 
 import { useState, useCallback } from "react";
@@ -17,7 +19,7 @@ import {
 } from "@hugeicons/core-free-icons";
 
 interface UrlInputProps {
-  onAnalyze: (url: string) => void;
+  onAnalyze: (url: string, branch?: string) => void;
   isLoading: boolean;
 }
 
@@ -37,7 +39,8 @@ export function UrlInput({ onAnalyze, isLoading }: UrlInputProps) {
       }
 
       setError(null);
-      onAnalyze(url);
+      // Pass undefined for branch - will use default branch
+      onAnalyze(url, undefined);
     },
     [url, onAnalyze]
   );
@@ -58,7 +61,6 @@ export function UrlInput({ onAnalyze, isLoading }: UrlInputProps) {
       className="w-full max-w-2xl mx-auto jetbrains-mono"
     >
       <form onSubmit={handleSubmit} className="space-y-3">
-        {/* Main Input Container */}
         <div
           className={cn(
             "relative flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 p-2 rounded-xl border bg-background/50 backdrop-blur-sm transition-all duration-200",
@@ -66,7 +68,6 @@ export function UrlInput({ onAnalyze, isLoading }: UrlInputProps) {
             error && "border-destructive/50"
           )}
         >
-          {/* GitHub Icon - Desktop */}
           <div className="hidden sm:flex items-center justify-center w-10 h-10 rounded-lg bg-foreground/5 shrink-0">
             <HugeiconsIcon
               icon={GithubIcon}
@@ -75,7 +76,6 @@ export function UrlInput({ onAnalyze, isLoading }: UrlInputProps) {
             />
           </div>
 
-          {/* Input Field */}
           <div className="flex-1 flex items-center gap-2">
             <Input
               type="url"
@@ -94,7 +94,6 @@ export function UrlInput({ onAnalyze, isLoading }: UrlInputProps) {
             />
           </div>
 
-          {/* Submit Button */}
           <Button
             type="submit"
             disabled={isLoading || !url.trim()}
@@ -119,7 +118,7 @@ export function UrlInput({ onAnalyze, isLoading }: UrlInputProps) {
                   icon={Search01Icon}
                   color="currentColor"
                   strokeWidth={1.5}
-                />{" "}
+                />
                 <span className="sm:inline">Analyze</span>
                 <HugeiconsIcon
                   icon={ArrowRight01Icon}
@@ -131,7 +130,6 @@ export function UrlInput({ onAnalyze, isLoading }: UrlInputProps) {
           </Button>
         </div>
 
-        {/* Error Message */}
         <AnimatePresence>
           {error && (
             <motion.div
@@ -151,7 +149,6 @@ export function UrlInput({ onAnalyze, isLoading }: UrlInputProps) {
           )}
         </AnimatePresence>
 
-        {/* Helper Text */}
         <p className="text-xs text-muted-foreground/50 text-center px-4">
           Paste a GitHub repository URL to analyze its structure and code
         </p>

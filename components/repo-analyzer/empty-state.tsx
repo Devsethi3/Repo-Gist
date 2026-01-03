@@ -1,3 +1,5 @@
+// components/repo-analyzer/empty-state.ts 
+
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { EmptyStateProps } from "./types";

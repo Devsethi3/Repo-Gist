@@ -1,3 +1,5 @@
+// components/architecture-diagram.tsx 
+
 "use client";
 
 import { useMemo } from "react";
@@ -95,7 +97,7 @@ export function ArchitectureDiagram({ components }: ArchitectureDiagramProps) {
     <Card className="border-border/60 bg-background">
       {/* Header */}
       <CardHeader className="p-4 border-b border-border/50">
-        <div className="flex items-center justify-between">
+        <div className="flex lg:items-center lg:flex-row justify-between flex-col gap-2 items-start">
           <CardTitle className="flex items-center gap-2 text-sm font-medium text-foreground">
             <Layers className="w-4 h-4 text-primary" />
             Architecture Overview

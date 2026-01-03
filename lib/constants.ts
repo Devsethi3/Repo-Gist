@@ -1,3 +1,4 @@
+// lib/constants.ts
 export const APP_NAME = "RepoGist";
 export const APP_DESCRIPTION = "AI-Powered GitHub Repository Analyzer";
 

@@ -1,3 +1,5 @@
+// components/file-tree/utils.ts 
+
 import { FileNode } from "@/lib/types";
 
 /**

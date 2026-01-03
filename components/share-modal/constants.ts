@@ -1,3 +1,5 @@
+// components/share-modal/constants.ts 
+
 import { VariantConfig } from "./types";
 
 export const VARIANTS: VariantConfig[] = [

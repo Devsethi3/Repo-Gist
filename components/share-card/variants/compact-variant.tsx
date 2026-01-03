@@ -1,5 +1,7 @@
+// components/share-card/variants/compact-variant.tsx
+
 import { forwardRef } from "react";
-import { Star, GitFork, Code } from "lucide-react";
+import { Star, GitFork, Code, GitBranch } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ShareCardData } from "@/lib/share";
 import { ScoreConfig } from "../types";
@@ -23,7 +25,7 @@ export const CompactVariant = forwardRef<HTMLDivElement, CompactVariantProps>(
         ref={ref}
         className="w-full max-w-[320px] sm:max-w-95 md:max-w-110"
       >
-        <TechnicalFrame config={config}>
+        <TechnicalFrame config={config} branch={data.branch}>
           <div className={cn(CARD_BASE_CLASSES, "flex flex-col", className)}>
             <div className="p-3 sm:p-4 md:p-5 relative z-10">
               {/* Header */}
@@ -42,9 +44,22 @@ export const CompactVariant = forwardRef<HTMLDivElement, CompactVariantProps>(
                   <h3 className="text-sm sm:text-base font-medium text-white truncate tracking-wide jetbrains-mono">
                     {data.repoName}
                   </h3>
-                  <p className="text-[10px] sm:text-xs text-zinc-500 truncate jetbrains-mono">
-                    @{data.ownerLogin}
-                  </p>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <p className="text-[10px] sm:text-xs text-zinc-500 truncate jetbrains-mono">
+                      @{data.ownerLogin}
+                    </p>
+                    {data.branch && (
+                      <>
+                        <span className="text-zinc-700">/</span>
+                        <span className="flex items-center gap-0.5 text-[10px] sm:text-xs text-zinc-400 jetbrains-mono">
+                          <GitBranch className="w-2.5 h-2.5" />
+                          <span className="max-w-12 sm:max-w-16 truncate">
+                            {data.branch}
+                          </span>
+                        </span>
+                      </>
+                    )}
+                  </div>
                 </div>
 
                 {/* Score */}

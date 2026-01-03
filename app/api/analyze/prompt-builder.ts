@@ -1,19 +1,23 @@
+// api/analyze/prompt-builder.ts
+
 import { PromptContext } from "./types";
 
 export function buildPrompt(context: PromptContext): string {
-  const { metadata, fileStats, compactTree, filesContent } = context;
+  const { metadata, fileStats, compactTree, filesContent, branch } = context;
 
   const languagesInfo = formatLanguagesInfo(fileStats.languages);
-  const jsonSchema = getResponseSchema(metadata);
+  const jsonSchema = getResponseSchema(metadata, branch);
   const requirements = getRequirements(metadata);
 
   return `# GitHub Repository Analysis: ${metadata.fullName}
+## Branch: ${branch}
 
 ## Repository Overview
 | Property | Value |
 |----------|-------|
 | **Name** | ${metadata.name} |
 | **Owner** | ${metadata.owner.login} |
+| **Branch** | ${branch} |
 | **Description** | ${metadata.description || "No description provided"} |
 | **Primary Language** | ${metadata.language || "Not specified"} |
 | **Stars** | ${metadata.stars.toLocaleString()} |
@@ -109,20 +113,35 @@ Trace how data moves through the system:
 - Map the edges showing data transformation
 - Label data types where apparent
 
+### Mermaid Diagrams
+Generate visual diagrams using Mermaid.js syntax:
+- **architectureDiagram**: A flowchart showing system architecture and component relationships
+- **dataFlowDiagram**: A sequence or flowchart showing how data moves through the system
+- **componentDiagram**: A class or component diagram showing module structure
+
+For each diagram:
+- Use proper Mermaid.js syntax (flowchart TD, sequenceDiagram, classDiagram, etc.)
+- Keep diagrams focused and readable (5-15 nodes max)
+- Use meaningful node labels and edge descriptions
+- Ensure the syntax is valid and will render correctly
+
 ${requirements}`;
 }
 
 function formatLanguagesInfo(languages: Record<string, number>): string {
   const entries = Object.entries(languages).slice(0, 5);
-  
+
   if (entries.length === 0) {
     return "Unknown";
   }
-  
+
   return entries.map(([lang, count]) => `${lang} (${count})`).join(", ");
 }
 
-function getResponseSchema(metadata: { fullName: string; name: string }): string {
+function getResponseSchema(
+  metadata: { fullName: string; name: string },
+  branch: string
+): string {
   return `{
   "summary": "string - 2-3 sentence technical summary",
   "whatItDoes": "string - Plain English explanation of the project",
@@ -131,6 +150,7 @@ function getResponseSchema(metadata: { fullName: string; name: string }): string
   "howToRun": [
     "git clone https://github.com/${metadata.fullName}.git",
     "cd ${metadata.name}",
+    "git checkout ${branch}",
     "npm install",
     "npm run dev"
   ],
@@ -209,6 +229,23 @@ function getResponseSchema(metadata: { fullName: string; name: string }): string
         "dataType": "string - Data type being transferred"
       }
     ]
+  },
+  "diagrams": {
+    "architecture": {
+      "type": "flowchart",
+      "title": "System Architecture",
+      "code": "flowchart TD\\n    A[Client] --> B[API Gateway]\\n    B --> C[Service]\\n    C --> D[(Database)]"
+    },
+    "dataFlow": {
+      "type": "sequenceDiagram",
+      "title": "Data Flow",
+      "code": "sequenceDiagram\\n    participant U as User\\n    participant A as API\\n    participant D as Database\\n    U->>A: Request\\n    A->>D: Query\\n    D-->>A: Response\\n    A-->>U: Data"
+    },
+    "components": {
+      "type": "classDiagram",
+      "title": "Component Structure",
+      "code": "classDiagram\\n    class ModuleA {\\n        +method1()\\n        +method2()\\n    }"
+    }
   }
 }`;
 }
@@ -226,7 +263,9 @@ function getRequirements(metadata: { language: string | null }): string {
 4. Ensure **howToRun** commands match the detected package manager and framework
 5. Keep suggestions **specific and actionable** for this repository
 6. Return **only valid JSON** - no markdown formatting outside the JSON block
-7. All arrays should have the specified minimum number of items`;
+7. All arrays should have the specified minimum number of items
+8. Ensure all Mermaid diagram code is valid and properly escaped
+9. Use proper Mermaid.js syntax for each diagram type`;
 }
 
 export function prepareFilesContent(

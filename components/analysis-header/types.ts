@@ -1,11 +1,17 @@
+// components/analysis-header/types.ts
+
 import { IconSvgElement } from "@hugeicons/react";
-import { RepoMetadata, AnalysisResult } from "@/lib/types";
+import { RepoMetadata, AnalysisResult, BranchInfo } from "@/lib/types";
 
 export interface AnalysisHeaderProps {
   metadata: RepoMetadata;
   techStack?: string[];
   summary?: string;
   result?: Partial<AnalysisResult>;
+  branch?: string;
+  availableBranches?: BranchInfo[];
+  onBranchChange?: (branch: string) => void;
+  isLoading?: boolean;
 }
 
 export interface ExtendedAnalysis {
@@ -23,6 +29,7 @@ export interface InfoSectionProps {
   count?: number;
   isHighlighted?: boolean;
   children: React.ReactNode;
+  actions?: React.ReactNode;
 }
 
 export interface TechBadgeProps {
@@ -60,4 +67,17 @@ export interface ColorClasses {
   iconText: string;
   border: string;
   bg: string;
+}
+
+export interface CopyButtonProps {
+  text: string;
+  label?: string;
+  className?: string;
+}
+
+export interface BranchSelectorProps {
+  currentBranch: string;
+  branches: BranchInfo[];
+  onBranchChange: (branch: string) => void;
+  disabled?: boolean;
 }

@@ -1,3 +1,5 @@
+// components/repo-analyzer/index.tsx
+
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
@@ -38,6 +40,7 @@ import { EmptyState } from "./empty-state";
 export function RepoAnalyzer() {
   const {
     analyze,
+    analyzeBranch,
     status,
     result,
     reset,
@@ -47,6 +50,7 @@ export function RepoAnalyzer() {
     hasError,
     isIdle,
     isCached,
+    currentBranch,
   } = useAnalysis();
 
   return (
@@ -123,12 +127,12 @@ export function RepoAnalyzer() {
               transition={{ duration: 0.3 }}
               className="space-y-6 sm:space-y-8 lg:space-y-10"
             >
-              {/* Cache indicator */}
+              {/* Cache indicator with branch info */}
               {isCached && (
                 <motion.div
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="flex items-center justify-center gap-3"
+                  className="flex items-center justify-center gap-3 flex-wrap"
                 >
                   <Badge
                     variant="secondary"
@@ -140,6 +144,15 @@ export function RepoAnalyzer() {
                     />
                     Loaded from cache
                   </Badge>
+                  {result.branch && (
+                    <Badge variant="outline" className="gap-1.5 px-3 py-1">
+                      <HugeiconsIcon
+                        icon={GitBranchIcon}
+                        className="w-3.5 h-3.5"
+                      />
+                      {result.branch}
+                    </Badge>
+                  )}
                   <Button
                     variant="ghost"
                     size="sm"
@@ -167,6 +180,10 @@ export function RepoAnalyzer() {
                   techStack={result.techStack}
                   summary={result.summary}
                   result={result}
+                  branch={result.branch || currentBranch}
+                  availableBranches={result.availableBranches}
+                  onBranchChange={analyzeBranch}
+                  isLoading={isLoading}
                 />
               </motion.section>
 
@@ -180,7 +197,11 @@ export function RepoAnalyzer() {
                 >
                   <SectionHeader title="Repository Structure" />
                   <div className="mt-4">
-                    <FileTree tree={result.fileTree} stats={result.fileStats} />
+                    <FileTree
+                      tree={result.fileTree}
+                      stats={result.fileStats}
+                      branch={result.branch || currentBranch}
+                    />
                   </div>
                 </motion.section>
               )}

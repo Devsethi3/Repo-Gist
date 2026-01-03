@@ -1,8 +1,15 @@
+// hooks/use-analysis.ts
+
 "use client";
 
 import { useCallback, useState } from "react";
 import { useAnalysisContext } from "@/context/analysis-context";
-import { RepoMetadata, FileNode, AnalysisResult } from "@/lib/types";
+import {
+  RepoMetadata,
+  FileNode,
+  AnalysisResult,
+  BranchInfo,
+} from "@/lib/types";
 import { analysisStorage } from "@/lib/storage";
 
 // Helper to extract repo full name from URL
@@ -41,9 +48,12 @@ export function useAnalysis() {
 
   const [isCached, setIsCached] = useState(false);
   const [currentRepoUrl, setCurrentRepoUrl] = useState<string | null>(null);
+  const [currentBranch, setCurrentBranch] = useState<string | undefined>(
+    undefined
+  );
 
   const analyze = useCallback(
-    async (url: string, skipCache = false) => {
+    async (url: string, branch?: string, skipCache = false) => {
       const repoFullName = extractRepoFullName(url);
 
       if (!repoFullName) {
@@ -58,10 +68,11 @@ export function useAnalysis() {
       }
 
       setCurrentRepoUrl(url);
+      setCurrentBranch(branch);
 
       // Check cache first (unless skipCache is true)
       if (!skipCache) {
-        const cached = analysisStorage.get(repoFullName);
+        const cached = analysisStorage.get(repoFullName, branch);
         if (cached) {
           setResult(cached);
           setIsCached(true);
@@ -87,7 +98,7 @@ export function useAnalysis() {
         const response = await fetch("/api/analyze", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ url }),
+          body: JSON.stringify({ url, branch }),
         });
 
         if (!response.ok) {
@@ -124,7 +135,13 @@ export function useAnalysis() {
               const data = JSON.parse(line.slice(6));
 
               if (data.type === "metadata") {
-                const { metadata, fileTree, fileStats } = data.data as {
+                const {
+                  metadata,
+                  fileTree,
+                  fileStats,
+                  branch: analyzedBranch,
+                  availableBranches,
+                } = data.data as {
                   metadata: RepoMetadata;
                   fileTree: FileNode[];
                   fileStats: {
@@ -132,14 +149,23 @@ export function useAnalysis() {
                     totalDirectories: number;
                     languages: Record<string, number>;
                   };
+                  branch: string;
+                  availableBranches: BranchInfo[];
                 };
 
-                currentResult = { metadata, fileTree, fileStats };
+                currentResult = {
+                  metadata,
+                  fileTree,
+                  fileStats,
+                  branch: analyzedBranch,
+                  availableBranches,
+                };
+                setCurrentBranch(analyzedBranch);
                 updateResult(currentResult);
                 setStatus({
                   stage: "analyzing",
                   progress: 40,
-                  currentStep: "AI is analyzing the codebase...",
+                  currentStep: `Analyzing ${analyzedBranch} branch...`,
                 });
               } else if (data.type === "content") {
                 aiContent += data.data;
@@ -177,15 +203,17 @@ export function useAnalysis() {
                       targetAudience: analysisData.targetAudience || "",
                       howToRun: analysisData.howToRun || [],
                       keyFolders: analysisData.keyFolders || [],
+                      diagrams: analysisData.diagrams || undefined,
                     };
 
                     updateResult(finalResult);
 
-                    // Save to cache
+                    // Save to cache with branch
                     if (currentResult.metadata?.fullName) {
                       analysisStorage.set(
                         currentResult.metadata.fullName,
-                        finalResult as AnalysisResult
+                        finalResult as AnalysisResult,
+                        currentResult.branch
                       );
                     }
                   }
@@ -206,7 +234,8 @@ export function useAnalysis() {
                   if (currentResult.metadata?.fullName) {
                     analysisStorage.set(
                       currentResult.metadata.fullName,
-                      fallbackResult as AnalysisResult
+                      fallbackResult as AnalysisResult,
+                      currentResult.branch
                     );
                   }
                 }
@@ -234,42 +263,71 @@ export function useAnalysis() {
     [setStatus, setResult, updateResult]
   );
 
-  // Refresh: clear cache and re-analyze
+  // Analyze a different branch of the current repo
+  const analyzeBranch = useCallback(
+    async (branch: string) => {
+      if (!currentRepoUrl) return;
+
+      // Always skip cache when explicitly changing branches
+      await analyze(currentRepoUrl, branch, true);
+    },
+    [currentRepoUrl, analyze]
+  );
+
+  // Refresh: clear cache and re-analyze current branch
   const refresh = useCallback(async () => {
     if (!currentRepoUrl) return;
 
     const repoFullName = extractRepoFullName(currentRepoUrl);
     if (repoFullName) {
-      analysisStorage.remove(repoFullName);
+      analysisStorage.remove(repoFullName, currentBranch);
     }
 
     setIsCached(false);
-    await analyze(currentRepoUrl, true); // skipCache = true
-  }, [currentRepoUrl, analyze]);
+    await analyze(currentRepoUrl, currentBranch, true);
+  }, [currentRepoUrl, currentBranch, analyze]);
 
   // Reset everything
   const reset = useCallback(() => {
     contextReset();
     setIsCached(false);
     setCurrentRepoUrl(null);
+    setCurrentBranch(undefined);
   }, [contextReset]);
 
-  // Clear cache for current repo
+  // Clear cache for current repo and branch
   const clearCache = useCallback(() => {
     if (!currentRepoUrl) return;
 
     const repoFullName = extractRepoFullName(currentRepoUrl);
     if (repoFullName) {
-      analysisStorage.remove(repoFullName);
+      analysisStorage.remove(repoFullName, currentBranch);
+      setIsCached(false);
+    }
+  }, [currentRepoUrl, currentBranch]);
+
+  // Clear all cached analyses for current repo (all branches)
+  const clearAllBranchCaches = useCallback(() => {
+    if (!currentRepoUrl) return;
+
+    const repoFullName = extractRepoFullName(currentRepoUrl);
+    if (repoFullName) {
+      // Get all cached analyses for this repo and remove them
+      const allCached = analysisStorage.getForRepo(repoFullName);
+      for (const cached of allCached) {
+        analysisStorage.remove(repoFullName, cached.branch);
+      }
       setIsCached(false);
     }
   }, [currentRepoUrl]);
 
   return {
     analyze,
+    analyzeBranch,
     refresh,
     reset,
     clearCache,
+    clearAllBranchCaches,
     status,
     result,
     isLoading,
@@ -278,5 +336,6 @@ export function useAnalysis() {
     isIdle,
     isCached,
     currentRepoUrl,
+    currentBranch,
   };
 }

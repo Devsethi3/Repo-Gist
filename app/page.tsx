@@ -1,5 +1,3 @@
-// app/page.tsx
-
 "use client";
 
 import { useEffect, Suspense } from "react";
@@ -17,12 +15,14 @@ function HomeContent() {
   // Handle repo query parameter from shared links
   useEffect(() => {
     const repoParam = searchParams.get("repo");
+    const branchParam = searchParams.get("branch");
+
     if (repoParam) {
       // Auto-trigger analysis when coming from a share link
-      analyze(repoParam);
+      analyze(repoParam, branchParam || undefined);
     }
   }, [searchParams, analyze]);
-
+  
   return (
     <div className="min-h-screen w-full relative jetbrains-mono">
       <div className="fixed inset-0 w-full h-full pointer-events-none -z-10">

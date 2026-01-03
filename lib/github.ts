@@ -1,4 +1,6 @@
-import { FileNode, FileStats, RepoMetadata } from "./types";
+// lib/github.ts - Add branch fetching and update existing functions
+
+import { FileNode, FileStats, RepoMetadata, BranchInfo } from "./types";
 import { getLanguageFromExtension, getFileExtension } from "./utils";
 import { MAX_TREE_ITEMS, MAX_FILE_TREE_DEPTH } from "./constants";
 
@@ -12,6 +14,16 @@ interface GitHubTreeItem {
 
 interface GitHubTreeResponse {
   tree: GitHubTreeItem[];
+  truncated?: boolean;
+}
+
+interface GitHubBranchResponse {
+  name: string;
+  commit: {
+    sha: string;
+    url: string;
+  };
+  protected: boolean;
 }
 
 function getHeaders(): HeadersInit {
@@ -23,6 +35,68 @@ function getHeaders(): HeadersInit {
     headers.Authorization = `Bearer ${process.env.GITHUB_TOKEN}`;
   }
   return headers;
+}
+
+/**
+ * Fetch all branches for a repository
+ */
+export async function fetchRepoBranches(
+  owner: string,
+  repo: string,
+  defaultBranch?: string
+): Promise<BranchInfo[]> {
+  const branches: BranchInfo[] = [];
+  let page = 1;
+  const perPage = 100;
+  const maxBranches = 100; // Limit to prevent excessive API calls
+
+  try {
+    while (branches.length < maxBranches) {
+      const response = await fetch(
+        `${GITHUB_API_BASE}/repos/${owner}/${repo}/branches?per_page=${perPage}&page=${page}`,
+        { headers: getHeaders(), cache: "no-store" }
+      );
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error("Repository not found");
+        }
+        throw new Error(`Failed to fetch branches: ${response.statusText}`);
+      }
+
+      const data: GitHubBranchResponse[] = await response.json();
+
+      if (data.length === 0) break;
+
+      branches.push(
+        ...data.map((branch) => ({
+          name: branch.name,
+          commit: {
+            sha: branch.commit.sha,
+            url: branch.commit.url,
+          },
+          protected: branch.protected,
+          isDefault: branch.name === defaultBranch,
+        }))
+      );
+
+      if (data.length < perPage) break;
+      page++;
+    }
+
+    // Sort: default branch first, then protected, then alphabetically
+    return branches.sort((a, b) => {
+      if (a.isDefault) return -1;
+      if (b.isDefault) return 1;
+      if (a.protected && !b.protected) return -1;
+      if (!a.protected && b.protected) return 1;
+      return a.name.localeCompare(b.name);
+    });
+  } catch (error) {
+    console.error("Error fetching branches:", error);
+    // Return empty array instead of throwing - branches are optional
+    return [];
+  }
 }
 
 export async function fetchRepoMetadata(
@@ -104,34 +178,52 @@ function shouldExclude(path: string): boolean {
   return excludePatterns.some((pattern) => pattern.test(path));
 }
 
+/**
+ * Fetch repository tree for a specific branch
+ */
 export async function fetchRepoTree(
   owner: string,
   repo: string,
   branch?: string
 ): Promise<FileNode[]> {
-  const targetBranch = branch || "main";
+  // Try the specified branch, then default to main, then master
+  const branchesToTry = branch ? [branch] : ["main", "master"];
 
-  const response = await fetch(
-    `${GITHUB_API_BASE}/repos/${owner}/${repo}/git/trees/${targetBranch}?recursive=1`,
-    { headers: getHeaders(), cache: "no-store" }
-  );
+  let lastError: Error | null = null;
 
-  if (!response.ok) {
-    if (targetBranch === "main") {
-      return fetchRepoTree(owner, repo, "master");
+  for (const targetBranch of branchesToTry) {
+    try {
+      const response = await fetch(
+        `${GITHUB_API_BASE}/repos/${owner}/${repo}/git/trees/${targetBranch}?recursive=1`,
+        { headers: getHeaders(), cache: "no-store" }
+      );
+
+      if (response.ok) {
+        const data: GitHubTreeResponse = await response.json();
+        const filteredItems = data.tree
+          .filter((item) => {
+            const depth = item.path.split("/").length;
+            return depth <= MAX_FILE_TREE_DEPTH && !shouldExclude(item.path);
+          })
+          .slice(0, MAX_TREE_ITEMS);
+
+        return buildFileTree(filteredItems);
+      }
+
+      if (response.status === 404) {
+        lastError = new Error(`Branch '${targetBranch}' not found`);
+        continue;
+      }
+
+      throw new Error(
+        `Failed to fetch repository tree: ${response.statusText}`
+      );
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
     }
-    throw new Error(`Failed to fetch repository tree: ${response.statusText}`);
   }
 
-  const data: GitHubTreeResponse = await response.json();
-  const filteredItems = data.tree
-    .filter((item) => {
-      const depth = item.path.split("/").length;
-      return depth <= MAX_FILE_TREE_DEPTH && !shouldExclude(item.path);
-    })
-    .slice(0, MAX_TREE_ITEMS);
-
-  return buildFileTree(filteredItems);
+  throw lastError || new Error("Failed to fetch repository tree");
 }
 
 function buildFileTree(items: GitHubTreeItem[]): FileNode[] {
@@ -182,11 +274,16 @@ function sortFileTree(nodes: FileNode[]): FileNode[] {
     }));
 }
 
+/**
+ * Fetch important files from a specific branch
+ */
 export async function fetchImportantFiles(
   owner: string,
   repo: string,
-  branch: string = "main"
+  branch?: string
 ): Promise<Record<string, string>> {
+  const targetBranch = branch || "main";
+
   const importantFiles = [
     "package.json",
     "README.md",
@@ -211,12 +308,13 @@ export async function fetchImportantFiles(
   let totalSize = 0;
   const maxSize = 80000;
 
-  for (const file of importantFiles) {
-    if (totalSize >= maxSize) break;
-
+  // Fetch files in parallel with concurrency limit
+  const fetchFile = async (
+    file: string
+  ): Promise<{ file: string; content: string } | null> => {
     try {
       const response = await fetch(
-        `${GITHUB_API_BASE}/repos/${owner}/${repo}/contents/${file}?ref=${branch}`,
+        `${GITHUB_API_BASE}/repos/${owner}/${repo}/contents/${file}?ref=${targetBranch}`,
         { headers: getHeaders(), cache: "no-store" }
       );
 
@@ -224,13 +322,30 @@ export async function fetchImportantFiles(
         const data = await response.json();
         if (data.size <= 50000 && data.encoding === "base64") {
           const content = Buffer.from(data.content, "base64").toString("utf-8");
-          const truncated = content.slice(0, 6000);
-          contents[file] = truncated;
-          totalSize += truncated.length;
+          return { file, content: content.slice(0, 6000) };
         }
       }
     } catch {
       // Skip file
+    }
+    return null;
+  };
+
+  // Fetch in batches of 5 to avoid rate limiting
+  const batchSize = 5;
+  for (
+    let i = 0;
+    i < importantFiles.length && totalSize < maxSize;
+    i += batchSize
+  ) {
+    const batch = importantFiles.slice(i, i + batchSize);
+    const results = await Promise.all(batch.map(fetchFile));
+
+    for (const result of results) {
+      if (result && totalSize < maxSize) {
+        contents[result.file] = result.content;
+        totalSize += result.content.length;
+      }
     }
   }
 

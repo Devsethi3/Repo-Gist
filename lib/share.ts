@@ -1,3 +1,5 @@
+// lib/share.ts - Updated with simple English plain text
+
 import { AnalysisResult } from "./types";
 
 export interface ShareCardData {
@@ -28,6 +30,7 @@ export interface ShareCardData {
     warnings: number;
   };
   analyzedAt: string;
+  branch?: string;
 }
 
 export function createShareData(
@@ -35,7 +38,7 @@ export function createShareData(
 ): ShareCardData | null {
   if (!result.metadata) return null;
 
-  const { metadata, scores, techStack, insights } = result;
+  const { metadata, scores, techStack, insights, branch } = result;
 
   return {
     repoName: metadata.name,
@@ -69,6 +72,7 @@ export function createShareData(
       day: "numeric",
       year: "numeric",
     }),
+    branch,
   };
 }
 
@@ -81,17 +85,22 @@ function formatNumberShort(num: number): string {
 
 const SITE_URL = "https://repo-gist.vercel.app";
 
-// Share link with repo path (for copy)
 export function generateShareUrl(data: ShareCardData): string {
-  return `${SITE_URL}/share/${data.repoFullName}`;
+  const branchParam = data.branch
+    ? `?branch=${encodeURIComponent(data.branch)}`
+    : "";
+  return `${SITE_URL}/share/${data.repoFullName}${branchParam}`;
 }
 
-// Twitter share
 export function generateTwitterShareUrl(data: ShareCardData): string {
   const scoreEmoji =
     data.overallScore >= 80 ? "🟢" : data.overallScore >= 60 ? "🟡" : "🔴";
 
-  const text = `🔍 Just analyzed ${data.repoFullName} using RepoGist!
+  const branchInfo = data.branch ? ` (${data.branch} branch)` : "";
+
+  const text = `🔍 Just analyzed ${
+    data.repoFullName
+  }${branchInfo} using RepoGist!
 
 ${scoreEmoji} Score: ${data.overallScore}/100
 ⭐ Stars: ${formatNumberShort(data.stars)}
@@ -105,9 +114,12 @@ Analyze any GitHub repo instantly 👇`;
   )}&url=${encodeURIComponent(SITE_URL)}`;
 }
 
-// LinkedIn share
 export function generateLinkedInShareUrl(data: ShareCardData): string {
-  const text = `🔍 Just analyzed ${data.repoFullName} using RepoGist!
+  const branchInfo = data.branch ? ` (${data.branch} branch)` : "";
+
+  const text = `🔍 Just analyzed ${
+    data.repoFullName
+  }${branchInfo} using RepoGist!
 
 📊 Score: ${data.overallScore}/100
 ⭐ Stars: ${formatNumberShort(data.stars)}
@@ -132,15 +144,415 @@ export async function copyToClipboard(text: string): Promise<boolean> {
       textArea.value = text;
       textArea.style.position = "fixed";
       textArea.style.left = "-999999px";
+      textArea.style.top = "-999999px";
       document.body.appendChild(textArea);
+      textArea.focus();
       textArea.select();
-      document.execCommand("copy");
+      const success = document.execCommand("copy");
       document.body.removeChild(textArea);
-      return true;
+      return success;
     } catch {
       return false;
     }
   }
+}
+
+function getScoreRating(score: number): string {
+  if (score >= 80) return "excellent";
+  if (score >= 60) return "good";
+  if (score >= 40) return "fair";
+  return "needs improvement";
+}
+
+/**
+ * Generate simple English summary text for copying
+ */
+export function generateSummaryText(result: Partial<AnalysisResult>): string {
+  if (!result.metadata) return "";
+
+  const parts: string[] = [];
+
+  // Title
+  parts.push(`Repository Analysis: ${result.metadata.fullName}`);
+  if (result.branch) {
+    parts.push(`Branch: ${result.branch}`);
+  }
+  parts.push(`Analyzed on ${new Date().toLocaleDateString()}`);
+  parts.push("");
+
+  // Basic Info
+  parts.push("About This Repository");
+  parts.push("---------------------");
+  if (result.metadata.description) {
+    parts.push(result.metadata.description);
+    parts.push("");
+  }
+
+  const stats = [];
+  stats.push(`${result.metadata.stars.toLocaleString()} stars`);
+  stats.push(`${result.metadata.forks.toLocaleString()} forks`);
+  if (result.metadata.language) {
+    stats.push(`written in ${result.metadata.language}`);
+  }
+  if (result.metadata.license) {
+    stats.push(`${result.metadata.license} license`);
+  }
+  parts.push(`This repository has ${stats.join(", ")}.`);
+  parts.push("");
+
+  // Summary
+  if (result.summary) {
+    parts.push("Summary");
+    parts.push("-------");
+    parts.push(result.summary);
+    parts.push("");
+  }
+
+  // What It Does
+  if (result.whatItDoes) {
+    parts.push("What It Does");
+    parts.push("------------");
+    parts.push(result.whatItDoes);
+    parts.push("");
+  }
+
+  // Target Audience
+  if (result.targetAudience) {
+    parts.push("Who It's For");
+    parts.push("------------");
+    parts.push(result.targetAudience);
+    parts.push("");
+  }
+
+  // Scores
+  if (result.scores) {
+    parts.push("Quality Assessment");
+    parts.push("------------------");
+    parts.push(
+      `Overall Score: ${result.scores.overall}/100 (${getScoreRating(
+        result.scores.overall
+      )})`
+    );
+    parts.push("");
+    parts.push("Breakdown:");
+    parts.push(
+      `• Code Quality: ${result.scores.codeQuality}/100 - ${getScoreRating(
+        result.scores.codeQuality
+      )}`
+    );
+    parts.push(
+      `• Documentation: ${result.scores.documentation}/100 - ${getScoreRating(
+        result.scores.documentation
+      )}`
+    );
+    parts.push(
+      `• Security: ${result.scores.security}/100 - ${getScoreRating(
+        result.scores.security
+      )}`
+    );
+    parts.push(
+      `• Maintainability: ${
+        result.scores.maintainability
+      }/100 - ${getScoreRating(result.scores.maintainability)}`
+    );
+    parts.push(
+      `• Test Coverage: ${result.scores.testCoverage}/100 - ${getScoreRating(
+        result.scores.testCoverage
+      )}`
+    );
+    parts.push(
+      `• Dependencies: ${result.scores.dependencies}/100 - ${getScoreRating(
+        result.scores.dependencies
+      )}`
+    );
+    parts.push("");
+  }
+
+  // Tech Stack
+  if (result.techStack && result.techStack.length > 0) {
+    parts.push("Technologies Used");
+    parts.push("-----------------");
+    parts.push(result.techStack.join(", "));
+    parts.push("");
+  }
+
+  // How to Run
+  if (result.howToRun && result.howToRun.length > 0) {
+    parts.push("Getting Started");
+    parts.push("---------------");
+    parts.push("To run this project locally:");
+    parts.push("");
+    result.howToRun.forEach((cmd, i) => {
+      parts.push(`${i + 1}. ${cmd}`);
+    });
+    parts.push("");
+  }
+
+  // Key Folders
+  if (result.keyFolders && result.keyFolders.length > 0) {
+    parts.push("Project Structure");
+    parts.push("-----------------");
+    parts.push("Key folders in this repository:");
+    parts.push("");
+    for (const folder of result.keyFolders) {
+      parts.push(`• ${folder.name}: ${folder.description}`);
+    }
+    parts.push("");
+  }
+
+  // Insights
+  if (result.insights && result.insights.length > 0) {
+    parts.push("Key Findings");
+    parts.push("------------");
+
+    const strengths = result.insights.filter((i) => i.type === "strength");
+    const weaknesses = result.insights.filter((i) => i.type === "weakness");
+    const suggestions = result.insights.filter((i) => i.type === "suggestion");
+    const warnings = result.insights.filter((i) => i.type === "warning");
+
+    if (strengths.length > 0) {
+      parts.push("");
+      parts.push("Strengths:");
+      for (const insight of strengths.slice(0, 3)) {
+        parts.push(`• ${insight.title}: ${insight.description}`);
+      }
+    }
+
+    if (weaknesses.length > 0) {
+      parts.push("");
+      parts.push("Areas for Improvement:");
+      for (const insight of weaknesses.slice(0, 3)) {
+        parts.push(`• ${insight.title}: ${insight.description}`);
+      }
+    }
+
+    if (suggestions.length > 0) {
+      parts.push("");
+      parts.push("Suggestions:");
+      for (const insight of suggestions.slice(0, 3)) {
+        parts.push(`• ${insight.title}: ${insight.description}`);
+      }
+    }
+
+    if (warnings.length > 0) {
+      parts.push("");
+      parts.push("Warnings:");
+      for (const insight of warnings.slice(0, 3)) {
+        parts.push(`• ${insight.title}: ${insight.description}`);
+      }
+    }
+    parts.push("");
+  }
+
+  // Refactors
+  if (result.refactors && result.refactors.length > 0) {
+    parts.push("Refactoring Opportunities");
+    parts.push("-------------------------");
+    for (const refactor of result.refactors.slice(0, 3)) {
+      parts.push(
+        `• ${refactor.title} (${refactor.impact} impact, ${refactor.effort} effort)`
+      );
+      parts.push(`  ${refactor.description}`);
+      if (refactor.files && refactor.files.length > 0) {
+        parts.push(`  Files: ${refactor.files.join(", ")}`);
+      }
+      parts.push("");
+    }
+  }
+
+  // Footer
+  parts.push("---");
+  parts.push(`Generated by RepoGist (${SITE_URL})`);
+
+  return parts.join("\n");
+}
+
+/**
+ * Generate markdown summary for copying
+ */
+export function generateMarkdownSummary(
+  result: Partial<AnalysisResult>
+): string {
+  if (!result.metadata) return "";
+
+  const lines: string[] = [];
+
+  // Header
+  lines.push(`# Repository Analysis: ${result.metadata.fullName}`);
+  if (result.branch) {
+    lines.push(`**Branch:** \`${result.branch}\``);
+  }
+  lines.push("");
+
+  // Badges
+  const badgeParts: string[] = [];
+  badgeParts.push(
+    `![Stars](https://img.shields.io/github/stars/${result.metadata.fullName}?style=flat-square)`
+  );
+  badgeParts.push(
+    `![Forks](https://img.shields.io/github/forks/${result.metadata.fullName}?style=flat-square)`
+  );
+  if (result.metadata.language) {
+    badgeParts.push(
+      `![Language](https://img.shields.io/github/languages/top/${result.metadata.fullName}?style=flat-square)`
+    );
+  }
+  lines.push(badgeParts.join(" "));
+  lines.push("");
+
+  // Summary
+  if (result.summary) {
+    lines.push("## Summary");
+    lines.push(result.summary);
+    lines.push("");
+  }
+
+  // What It Does
+  if (result.whatItDoes) {
+    lines.push("## What It Does");
+    lines.push(result.whatItDoes);
+    lines.push("");
+  }
+
+  // Target Audience
+  if (result.targetAudience) {
+    lines.push("## Target Audience");
+    lines.push(result.targetAudience);
+    lines.push("");
+  }
+
+  // Scores
+  if (result.scores) {
+    lines.push("## Quality Scores");
+    lines.push("");
+    lines.push("| Metric | Score | Rating |");
+    lines.push("|--------|-------|--------|");
+    lines.push(
+      `| **Overall** | ${result.scores.overall}/100 | ${getScoreRating(
+        result.scores.overall
+      )} |`
+    );
+    lines.push(
+      `| Code Quality | ${result.scores.codeQuality}/100 | ${getScoreRating(
+        result.scores.codeQuality
+      )} |`
+    );
+    lines.push(
+      `| Documentation | ${result.scores.documentation}/100 | ${getScoreRating(
+        result.scores.documentation
+      )} |`
+    );
+    lines.push(
+      `| Security | ${result.scores.security}/100 | ${getScoreRating(
+        result.scores.security
+      )} |`
+    );
+    lines.push(
+      `| Maintainability | ${
+        result.scores.maintainability
+      }/100 | ${getScoreRating(result.scores.maintainability)} |`
+    );
+    lines.push(
+      `| Test Coverage | ${result.scores.testCoverage}/100 | ${getScoreRating(
+        result.scores.testCoverage
+      )} |`
+    );
+    lines.push(
+      `| Dependencies | ${result.scores.dependencies}/100 | ${getScoreRating(
+        result.scores.dependencies
+      )} |`
+    );
+    lines.push("");
+  }
+
+  // Tech Stack
+  if (result.techStack && result.techStack.length > 0) {
+    lines.push("## Tech Stack");
+    lines.push("");
+    lines.push(result.techStack.map((t) => `\`${t}\``).join(" • "));
+    lines.push("");
+  }
+
+  // How to Run
+  if (result.howToRun && result.howToRun.length > 0) {
+    lines.push("## Getting Started");
+    lines.push("");
+    lines.push("```bash");
+    for (const cmd of result.howToRun) {
+      lines.push(cmd);
+    }
+    lines.push("```");
+    lines.push("");
+  }
+
+  // Key Folders
+  if (result.keyFolders && result.keyFolders.length > 0) {
+    lines.push("## Project Structure");
+    lines.push("");
+    for (const folder of result.keyFolders) {
+      lines.push(`- **\`${folder.name}\`**: ${folder.description}`);
+    }
+    lines.push("");
+  }
+
+  // Insights
+  if (result.insights && result.insights.length > 0) {
+    lines.push("## Key Findings");
+    lines.push("");
+
+    const grouped = {
+      strength: {
+        title: "Strengths",
+        items: result.insights.filter((i) => i.type === "strength"),
+      },
+      weakness: {
+        title: "Areas for Improvement",
+        items: result.insights.filter((i) => i.type === "weakness"),
+      },
+      suggestion: {
+        title: "Suggestions",
+        items: result.insights.filter((i) => i.type === "suggestion"),
+      },
+      warning: {
+        title: "Warnings",
+        items: result.insights.filter((i) => i.type === "warning"),
+      },
+    };
+
+    for (const [, group] of Object.entries(grouped)) {
+      if (group.items.length > 0) {
+        lines.push(`### ${group.title}`);
+        lines.push("");
+        for (const insight of group.items) {
+          lines.push(`- **${insight.title}**: ${insight.description}`);
+        }
+        lines.push("");
+      }
+    }
+  }
+
+  // Footer
+  lines.push("---");
+  lines.push(
+    `*Generated by [RepoGist](${SITE_URL}) on ${new Date().toLocaleDateString()}*`
+  );
+
+  return lines.join("\n");
+}
+
+/**
+ * Copy summary to clipboard
+ */
+export async function copySummary(
+  result: Partial<AnalysisResult>,
+  format: "text" | "markdown" = "text"
+): Promise<boolean> {
+  const text =
+    format === "markdown"
+      ? generateMarkdownSummary(result)
+      : generateSummaryText(result);
+
+  return copyToClipboard(text);
 }
 
 export async function downloadAsImage(
@@ -174,11 +586,10 @@ export async function downloadAsImage(
   }
 }
 
-// Redirect functions
 export function redirectToTwitter(data: ShareCardData): void {
-  window.location.href = generateTwitterShareUrl(data);
+  window.open(generateTwitterShareUrl(data), "_blank", "noopener,noreferrer");
 }
 
 export function redirectToLinkedIn(data: ShareCardData): void {
-  window.location.href = generateLinkedInShareUrl(data);
+  window.open(generateLinkedInShareUrl(data), "_blank", "noopener,noreferrer");
 }

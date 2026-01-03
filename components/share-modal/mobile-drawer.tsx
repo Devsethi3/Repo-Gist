@@ -1,3 +1,5 @@
+// components/share-modal/mobile-drawer.tsx
+
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
@@ -11,6 +13,8 @@ import {
   Loading01Icon,
   Cancel01Icon,
   Linkedin02Icon,
+  FileDownloadIcon,
+  GitBranchIcon,
 } from "@hugeicons/core-free-icons";
 import {
   Drawer,
@@ -36,10 +40,12 @@ export function MobileDrawer({
   currentVariant,
   copied,
   downloading,
+  downloadingPDF,
   downloadSuccess,
   cardRef,
   handleCopyLink,
   handleDownload,
+  handleDownloadPDF,
   handleTwitterShare,
   handleLinkedInShare,
 }: MobileDrawerProps) {
@@ -59,9 +65,20 @@ export function MobileDrawer({
                 <DrawerTitle className="text-base text-left instrument-serif font-normal tracking-wide">
                   Share Analysis
                 </DrawerTitle>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  {shareData.repoFullName}
-                </p>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <p className="text-xs text-muted-foreground">
+                    {shareData.repoFullName}
+                  </p>
+                  {shareData.branch && (
+                    <Badge
+                      variant="outline"
+                      className="text-[9px] gap-0.5 px-1 h-4"
+                    >
+                      <HugeiconsIcon icon={GitBranchIcon} className="w-2 h-2" />
+                      {shareData.branch}
+                    </Badge>
+                  )}
+                </div>
               </div>
             </div>
             <DrawerClose asChild>
@@ -114,35 +131,61 @@ export function MobileDrawer({
 
           {/* Quick Actions Grid */}
           <div className="p-4 space-y-3 border-t bg-background border-border">
-            {/* Primary Action */}
-            <Button
-              onClick={handleDownload}
-              disabled={downloading}
-              className={cn(
-                "w-full h-11 gap-2 transition-all",
-                downloadSuccess && "bg-emerald-600 hover:bg-emerald-600"
-              )}
-            >
-              {downloading ? (
-                <>
-                  <HugeiconsIcon
-                    icon={Loading01Icon}
-                    className="w-4 h-4 animate-spin"
-                  />
-                  Generating...
-                </>
-              ) : downloadSuccess ? (
-                <>
-                  <HugeiconsIcon icon={Tick01Icon} className="w-4 h-4" />
-                  Downloaded!
-                </>
-              ) : (
-                <>
-                  <HugeiconsIcon icon={Download01Icon} className="w-4 h-4" />
-                  Download PNG
-                </>
-              )}
-            </Button>
+            {/* Primary Actions Row */}
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                onClick={handleDownload}
+                disabled={downloading}
+                className={cn(
+                  "h-10 gap-2 transition-all",
+                  downloadSuccess && "bg-emerald-600 hover:bg-emerald-600"
+                )}
+              >
+                {downloading ? (
+                  <>
+                    <HugeiconsIcon
+                      icon={Loading01Icon}
+                      className="w-4 h-4 animate-spin"
+                    />
+                    ...
+                  </>
+                ) : downloadSuccess ? (
+                  <>
+                    <HugeiconsIcon icon={Tick01Icon} className="w-4 h-4" />
+                    Done!
+                  </>
+                ) : (
+                  <>
+                    <HugeiconsIcon icon={Download01Icon} className="w-4 h-4" />
+                    PNG
+                  </>
+                )}
+              </Button>
+              <Button
+                onClick={handleDownloadPDF}
+                disabled={downloadingPDF}
+                variant="outline"
+                className="h-10 gap-2"
+              >
+                {downloadingPDF ? (
+                  <>
+                    <HugeiconsIcon
+                      icon={Loading01Icon}
+                      className="w-4 h-4 animate-spin"
+                    />
+                    ...
+                  </>
+                ) : (
+                  <>
+                    <HugeiconsIcon
+                      icon={FileDownloadIcon}
+                      className="w-4 h-4"
+                    />
+                    PDF
+                  </>
+                )}
+              </Button>
+            </div>
 
             {/* Secondary Actions Row */}
             <div className="grid grid-cols-3 gap-2">
@@ -181,7 +224,7 @@ export function MobileDrawer({
                 variant="outline"
                 className="text-[10px] bg-muted/50 text-muted-foreground"
               >
-                PNG format
+                PNG / PDF
               </Badge>
             </div>
           </div>

@@ -1,3 +1,5 @@
+// components/file-tree/types.ts
+
 import { FileNode } from "@/lib/types";
 import { JSX } from "react";
 
@@ -8,6 +10,7 @@ export interface FileTreeProps {
     totalDirectories: number;
     languages: Record<string, number>;
   };
+  branch?: string;
 }
 
 export interface TreeNodeProps {

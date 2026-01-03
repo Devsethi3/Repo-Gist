@@ -1,5 +1,7 @@
+// components/share-card/variants/default-variant.tsx
+
 import { forwardRef } from "react";
-import { Terminal } from "lucide-react";
+import { Terminal, GitBranch } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ShareCardData } from "@/lib/share";
 import { ScoreConfig, BreakdownItem } from "../types";
@@ -35,7 +37,7 @@ export const DefaultVariant = forwardRef<HTMLDivElement, DefaultVariantProps>(
 
     return (
       <div ref={ref} className="w-full max-w-[320px] sm:max-w-105 md:max-w-125">
-        <TechnicalFrame config={config}>
+        <TechnicalFrame config={config} branch={data.branch}>
           <div className={cn(CARD_BASE_CLASSES, className)}>
             <div className="p-3 sm:p-5 md:p-6 relative z-10">
               {/* Top Row */}
@@ -51,11 +53,22 @@ export const DefaultVariant = forwardRef<HTMLDivElement, DefaultVariantProps>(
                     <h3 className="text-sm sm:text-base md:text-lg font-medium text-white tracking-wide jetbrains-mono truncate">
                       {data.repoName}
                     </h3>
-                    <div className="flex items-center gap-1.5 sm:gap-2 mt-0.5 sm:mt-1">
+                    <div className="flex items-center gap-1.5 sm:gap-2 mt-0.5 sm:mt-1 flex-wrap">
                       <span className="text-[10px] sm:text-xs text-zinc-500 jetbrains-mono truncate">
                         @{data.ownerLogin}
                       </span>
-                      {data.language && (
+                      {data.branch && (
+                        <>
+                          <span className="text-zinc-700">/</span>
+                          <span className="flex items-center gap-0.5 text-[10px] sm:text-xs text-zinc-400 jetbrains-mono">
+                            <GitBranch className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                            <span className="max-w-16 sm:max-w-24 truncate">
+                              {data.branch}
+                            </span>
+                          </span>
+                        </>
+                      )}
+                      {data.language && !data.branch && (
                         <>
                           <span className="text-zinc-700 hidden sm:inline">
                             /
@@ -89,7 +102,6 @@ export const DefaultVariant = forwardRef<HTMLDivElement, DefaultVariantProps>(
                 {metrics.map((m) => {
                   const mConfig = getScoreConfig(m.v);
                   const mStyle = TIER_STYLES[mConfig.tier];
-                  // Ensure value is between 0-100
                   const progressValue = Math.min(100, Math.max(0, m.v));
 
                   return (
@@ -116,7 +128,7 @@ export const DefaultVariant = forwardRef<HTMLDivElement, DefaultVariantProps>(
                           }}
                         />
 
-                        {/* Progress Fill - Using inline style for reliability */}
+                        {/* Progress Fill */}
                         <div
                           className="h-full relative z-10 transition-all duration-500"
                           style={{

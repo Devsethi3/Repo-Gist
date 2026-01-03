@@ -1,3 +1,5 @@
+// components/file-tree/tree-node.tsx 
+
 "use client";
 
 import { useState, useMemo, useCallback, memo } from "react";

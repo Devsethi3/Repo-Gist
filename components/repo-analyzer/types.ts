@@ -1,3 +1,4 @@
+
 import { IconSvgElement } from "@hugeicons/react";
 
 export interface SectionHeaderProps {
@@ -16,4 +17,9 @@ export interface EmptyStateProps {
   icon: IconSvgElement;
   title: string;
   description: string;
+}
+
+export interface BranchIndicatorProps {
+  branch: string;
+  isDefault?: boolean;
 }

@@ -1,4 +1,6 @@
-import { FileNode } from "@/lib/types";
+// api/analyze/stream-handler.ts
+
+import { FileNode, BranchInfo } from "@/lib/types";
 import { RepoMetadata, FileStats, StreamEvent } from "./types";
 
 const encoder = new TextEncoder();
@@ -10,11 +12,13 @@ export function encodeStreamEvent(event: StreamEvent): Uint8Array {
 export function createMetadataEvent(
   metadata: RepoMetadata,
   fileTree: FileNode[],
-  fileStats: FileStats
+  fileStats: FileStats,
+  branch: string,
+  availableBranches: BranchInfo[]
 ): Uint8Array {
   return encodeStreamEvent({
     type: "metadata",
-    data: { metadata, fileTree, fileStats },
+    data: { metadata, fileTree, fileStats, branch, availableBranches },
   });
 }
 
@@ -52,11 +56,21 @@ export function createAnalysisStream(
   metadata: RepoMetadata,
   fileTree: FileNode[],
   fileStats: FileStats,
+  branch: string,
+  availableBranches: BranchInfo[],
   textStream: AsyncIterable<string>
 ): ReadableStream {
   return new ReadableStream({
     async start(controller) {
-      controller.enqueue(createMetadataEvent(metadata, fileTree, fileStats));
+      controller.enqueue(
+        createMetadataEvent(
+          metadata,
+          fileTree,
+          fileStats,
+          branch,
+          availableBranches
+        )
+      );
 
       try {
         for await (const chunk of textStream) {

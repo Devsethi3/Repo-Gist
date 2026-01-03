@@ -1,3 +1,5 @@
+// components/automation-panel.tsx 
+
 "use client";
 
 import { useState } from "react";

@@ -1,3 +1,5 @@
+// components/analysis-header/command-step.tsx 
+
 "use client";
 
 import { useState } from "react";

@@ -1,3 +1,5 @@
+// components/file-tree/empty-state.tsx 
+
 import { HugeiconsIcon } from "@hugeicons/react";
 import { FolderOpenIcon } from "@hugeicons/core-free-icons";
 import { EmptyStateProps } from "./types";

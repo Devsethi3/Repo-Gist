@@ -1,3 +1,5 @@
+// components/file-tree/contants.ts 
+
 // Default expand level - folders up to this level will be expanded by default
 export const DEFAULT_EXPAND_LEVEL = 2;
 

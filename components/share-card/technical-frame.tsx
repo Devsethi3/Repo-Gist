@@ -1,10 +1,14 @@
+// components/share-card/technical-frame.tsx
+
 import { cn } from "@/lib/utils";
 import { TechnicalFrameProps } from "./types";
 import { TIER_STYLES } from "./constants";
+import { GitBranch } from "lucide-react";
 
 export function TechnicalFrame({
   children,
   config,
+  branch,
   className,
 }: TechnicalFrameProps) {
   const styles = TIER_STYLES[config.tier];
@@ -47,9 +51,18 @@ export function TechnicalFrame({
         />
 
         {/* Top Label */}
-        <div className="absolute -top-2.5 sm:-top-3 left-3 sm:left-6 px-1.5 sm:px-2 bg-[#050505] text-[7px] sm:text-[9px] jetbrains-mono text-zinc-500 uppercase tracking-widest border-x border-zinc-900">
+        <div className="absolute -top-2.5 sm:-top-3 left-3 sm:left-6 px-1.5 sm:px-2 bg-[#050505] text-[7px] sm:text-[9px] jetbrains-mono text-zinc-500 uppercase tracking-widest border-x border-zinc-900 flex items-center gap-1 sm:gap-1.5">
           <span className="hidden sm:inline">SYS.ANALYSIS // </span>
           <span className={styles.text}>{config.label}</span>
+          {branch && (
+            <>
+              <span className="text-zinc-700 hidden sm:inline">{"//"}</span>
+              <span className="flex items-center gap-0.5 text-zinc-400">
+                <GitBranch className="w-2 h-2 sm:w-2.5 sm:h-2.5" />
+                <span className="max-w-16 sm:max-w-24 truncate">{branch}</span>
+              </span>
+            </>
+          )}
         </div>
 
         {/* Bottom Metadata */}

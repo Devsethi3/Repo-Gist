@@ -1,3 +1,5 @@
+// lib/types.ts - Complete updated file
+
 export interface FileNode {
   name: string;
   path: string;
@@ -12,6 +14,16 @@ export interface FileStats {
   totalFiles: number;
   totalDirectories: number;
   languages: Record<string, number>;
+}
+
+export interface BranchInfo {
+  name: string;
+  commit: {
+    sha: string;
+    url: string;
+  };
+  protected: boolean;
+  isDefault: boolean;
 }
 
 export interface RepoMetadata {
@@ -112,10 +124,24 @@ export interface KeyFolder {
   description: string;
 }
 
+export interface MermaidDiagram {
+  type: "flowchart" | "sequenceDiagram" | "classDiagram" | "graph";
+  title: string;
+  code: string;
+}
+
+export interface DiagramsData {
+  architecture?: MermaidDiagram;
+  dataFlow?: MermaidDiagram;
+  components?: MermaidDiagram;
+}
+
 export interface AnalysisResult {
   metadata: RepoMetadata;
+  branch?: string;
+  availableBranches?: BranchInfo[];
   fileTree?: FileNode[];
-  fileStats?: FileStats; 
+  fileStats?: FileStats;
   techStack?: string[];
   summary?: string;
   whatItDoes?: string;
@@ -131,6 +157,7 @@ export interface AnalysisResult {
     nodes: DataFlowNode[];
     edges: DataFlowEdge[];
   };
+  diagrams?: DiagramsData;
 }
 
 export type AnalysisStage =
