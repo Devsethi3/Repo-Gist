@@ -1,5 +1,3 @@
-// api/branches/route.ts
-
 import { NextRequest } from "next/server";
 import { fetchRepoMetadata, fetchRepoBranches } from "@/lib/github";
 import { validateAndParseUrl } from "../analyze/validators";
@@ -26,7 +24,6 @@ export async function POST(request: NextRequest) {
 
     const { owner, repo } = validateAndParseUrl(url);
 
-    // Fetch metadata to get default branch
     const metadata = await fetchRepoMetadata(owner, repo);
     const branches = await fetchRepoBranches(
       owner,

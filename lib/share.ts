@@ -1,5 +1,3 @@
-// lib/share.ts - Updated with simple English plain text
-
 import { AnalysisResult } from "./types";
 
 export interface ShareCardData {

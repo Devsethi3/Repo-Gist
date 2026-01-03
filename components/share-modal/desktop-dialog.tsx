@@ -1,5 +1,3 @@
-// components/share-modal/desktop-dialog.tsx
-
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";

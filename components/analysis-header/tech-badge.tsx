@@ -1,5 +1,3 @@
-// components/analysis-header/tech-badge.tsx 
-
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { TechBadgeProps } from "./types";

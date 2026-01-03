@@ -1,5 +1,3 @@
-// components/share-card/index.tsx
-
 "use client";
 
 import { forwardRef } from "react";

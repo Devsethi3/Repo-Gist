@@ -1,5 +1,3 @@
-// api/analyze/stream-handler.ts
-
 import { FileNode, BranchInfo } from "@/lib/types";
 import { RepoMetadata, FileStats, StreamEvent } from "./types";
 

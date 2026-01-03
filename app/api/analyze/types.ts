@@ -1,5 +1,3 @@
-// api/analyze/types.ts
-
 import { fetchRepoMetadata, calculateFileStats } from "@/lib/github";
 import { FileNode, BranchInfo } from "@/lib/types";
 

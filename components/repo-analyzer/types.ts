@@ -1,4 +1,3 @@
-
 import { IconSvgElement } from "@hugeicons/react";
 
 export interface SectionHeaderProps {

@@ -1,5 +1,3 @@
-// components/url-input.tsx
-
 "use client";
 
 import { useState, useCallback } from "react";

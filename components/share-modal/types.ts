@@ -1,5 +1,3 @@
-// components/share-modal/types.ts
-
 import { AnalysisResult } from "@/lib/types";
 import { ShareCardData } from "@/lib/share";
 import { IconSvgElement } from "@hugeicons/react";

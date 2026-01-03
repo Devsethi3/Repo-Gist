@@ -1,5 +1,3 @@
-// components/share-card/technical-frame.tsx
-
 import { cn } from "@/lib/utils";
 import { TechnicalFrameProps } from "./types";
 import { TIER_STYLES } from "./constants";

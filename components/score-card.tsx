@@ -1,5 +1,3 @@
-// components/score-card.tsx 
-
 "use client";
 
 import { motion } from "framer-motion";

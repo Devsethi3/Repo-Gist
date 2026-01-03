@@ -1,5 +1,3 @@
-// lib/pdf-export.ts
-
 import { AnalysisResult } from "./types";
 
 interface RGB {

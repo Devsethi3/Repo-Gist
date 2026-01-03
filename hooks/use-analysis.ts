@@ -1,5 +1,3 @@
-// hooks/use-analysis.ts
-
 "use client";
 
 import { useCallback, useState } from "react";
@@ -12,16 +10,13 @@ import {
 } from "@/lib/types";
 import { analysisStorage } from "@/lib/storage";
 
-// Helper to extract repo full name from URL
 function extractRepoFullName(url: string): string | null {
   try {
-    // Handle full GitHub URLs
     const githubRegex =
       /(?:https?:\/\/)?(?:www\.)?github\.com\/([^\/]+\/[^\/\s?#]+)/;
     const match = url.match(githubRegex);
     if (match) return match[1].replace(/\.git$/, "");
 
-    // Handle owner/repo format
     const simpleRegex = /^([^\/\s]+\/[^\/\s]+)$/;
     const simpleMatch = url.trim().match(simpleRegex);
     if (simpleMatch) return simpleMatch[1];
@@ -70,7 +65,6 @@ export function useAnalysis() {
       setCurrentRepoUrl(url);
       setCurrentBranch(branch);
 
-      // Check cache first (unless skipCache is true)
       if (!skipCache) {
         const cached = analysisStorage.get(repoFullName, branch);
         if (cached) {

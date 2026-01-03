@@ -1,5 +1,3 @@
-// lib/storage.ts - Updated with branch support
-
 import { AnalysisResult } from "@/lib/types";
 
 const STORAGE_KEY = "repo-analyses";

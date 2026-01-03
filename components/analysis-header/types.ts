@@ -1,5 +1,3 @@
-// components/analysis-header/types.ts
-
 import { IconSvgElement } from "@hugeicons/react";
 import { RepoMetadata, AnalysisResult, BranchInfo } from "@/lib/types";
 

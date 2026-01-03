@@ -1,5 +1,3 @@
-// components/share-card/variants/detailed-variant.tsx
-
 import { forwardRef } from "react";
 import {
   Code,

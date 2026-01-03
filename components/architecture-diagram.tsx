@@ -1,5 +1,3 @@
-// components/architecture-diagram.tsx 
-
 "use client";
 
 import { useMemo } from "react";

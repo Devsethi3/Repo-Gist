@@ -1,5 +1,3 @@
-// components/file-tree/index.tsx
-
 "use client";
 
 import { useState, useMemo, useCallback } from "react";

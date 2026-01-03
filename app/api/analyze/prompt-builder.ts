@@ -1,5 +1,3 @@
-// api/analyze/prompt-builder.ts
-
 import { PromptContext } from "./types";
 
 export function buildPrompt(context: PromptContext): string {

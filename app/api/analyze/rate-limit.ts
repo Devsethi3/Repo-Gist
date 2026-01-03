@@ -1,5 +1,3 @@
-// api/analyze/rate-limit.ts 
-
 import { RateLimitRecord, RateLimitResult } from "./types";
 import { RATE_LIMIT } from "./config";
 

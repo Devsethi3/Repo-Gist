@@ -1,5 +1,3 @@
-// components/share-modal/tip-item.tsx 
-
 import { TipItemProps } from "./types";
 
 export function TipItem({ text }: TipItemProps) {

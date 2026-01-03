@@ -1,5 +1,3 @@
-// components/analysis-header/command-step.tsx 
-
 "use client";
 
 import { useState } from "react";
@@ -32,10 +30,7 @@ export function CommandStep({ step, command }: CommandStepProps) {
         onClick={handleCopy}
       >
         {copied ? (
-          <HugeiconsIcon
-            icon={Tick01Icon}
-            className="w-3 h-3 text-primary"
-          />
+          <HugeiconsIcon icon={Tick01Icon} className="w-3 h-3 text-primary" />
         ) : (
           <HugeiconsIcon
             icon={Copy01Icon}

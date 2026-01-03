@@ -1,5 +1,3 @@
-// components/file-tree/types.ts
-
 import { FileNode } from "@/lib/types";
 import { JSX } from "react";
 

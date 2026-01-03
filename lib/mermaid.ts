@@ -1,5 +1,3 @@
-// lib/mermaid.ts
-
 import { ArchitectureComponent, DataFlowNode, DataFlowEdge } from "./types";
 
 export interface MermaidDiagram {

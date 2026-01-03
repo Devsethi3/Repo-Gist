@@ -1,5 +1,3 @@
-// components/share-modal/mobile-drawer.tsx
-
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";

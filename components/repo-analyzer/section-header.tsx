@@ -1,5 +1,3 @@
-// components/repo-analyzer/section=header.tsx
-
 import { SectionHeaderProps } from "./types";
 import { HugeiconsIcon } from "@hugeicons/react";
 

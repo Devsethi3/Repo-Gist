@@ -1,5 +1,3 @@
-// components/analysis-header/index.tsx
-
 "use client";
 
 import { useState, useMemo, useCallback } from "react";
@@ -108,7 +106,6 @@ export function AnalysisHeader({
   return (
     <>
       <Card className="border-border/60 overflow-hidden p-0 bg-background">
-        {/* Main Header Section */}
         <div className="p-4 sm:p-6">
           {/* Top Row: Avatar, Info, Actions */}
           <div className="flex gap-3 sm:gap-4">
@@ -155,10 +152,8 @@ export function AnalysisHeader({
 
             {/* Desktop Actions */}
             <div className="hidden sm:flex items-start gap-2 shrink-0">
-              {/* Export Actions - NEW */}
               <ExportActions result={shareResult} />
 
-              {/* Divider */}
               <div className="w-px h-10 bg-border/50 mx-1" />
 
               {/* Share & GitHub */}
@@ -202,7 +197,6 @@ export function AnalysisHeader({
             </div>
           </div>
 
-          {/* Description - Full width row below avatar/info/actions */}
           {metadata.description && (
             <p className="text-sm text-muted-foreground leading-relaxed mt-3 sm:mt-4">
               {metadata.description}
@@ -388,7 +382,6 @@ export function AnalysisHeader({
           </div>
         </div>
 
-        {/* Extended Information Section */}
         <CardContent className="p-4 sm:p-6 pt-4 space-y-4 border-t border-border/50">
           {/* What This Repo Does */}
           <InfoSection

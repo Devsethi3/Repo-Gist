@@ -1,5 +1,3 @@
-// components/analysis-header/utils.ts 
-
 import { RepoMetadata, AnalysisResult, FileNode } from "@/lib/types";
 import { ExtendedAnalysis } from "./types";
 import { FOLDER_DESCRIPTIONS, TECH_ICONS } from "./constants";

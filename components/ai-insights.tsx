@@ -1,5 +1,3 @@
-// components/ai-insights.tsx 
-
 "use client";
 
 import { useState, useMemo, useCallback } from "react";

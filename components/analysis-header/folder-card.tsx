@@ -1,5 +1,3 @@
-// components/analysis-header/folder-card.tsx 
-
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Folder01Icon } from "@hugeicons/core-free-icons";
 import { FolderCardProps } from "./types";

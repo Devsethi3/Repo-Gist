@@ -1,5 +1,3 @@
-// components/file-tree/file-icon.tsx
-
 import { memo } from "react";
 import {
   File,

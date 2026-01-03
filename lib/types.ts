@@ -1,5 +1,3 @@
-// lib/types.ts - Complete updated file
-
 export interface FileNode {
   name: string;
   path: string;

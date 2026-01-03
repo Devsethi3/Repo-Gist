@@ -1,5 +1,3 @@
-// components/analysis-header/contants.tsx 
-
 import { ColorClasses, AccentColor } from "./types";
 
 export const ACCENT_COLOR_CLASSES: Record<AccentColor, ColorClasses> = {

@@ -1,5 +1,3 @@
-// components/data-flow-diagram.tsx
-
 "use client";
 
 import { useMemo, useState, useEffect, useCallback } from "react";

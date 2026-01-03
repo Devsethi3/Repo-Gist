@@ -1,5 +1,3 @@
-// components/share-modal/index.tsx
-
 "use client";
 
 import { useState, useRef, useCallback, useMemo } from "react";

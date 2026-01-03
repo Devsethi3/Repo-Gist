@@ -1,5 +1,3 @@
-// components/repo-analyzer/tab-trigger-item.tsx 
-
 import { TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { TabTriggerItemProps } from "./types";

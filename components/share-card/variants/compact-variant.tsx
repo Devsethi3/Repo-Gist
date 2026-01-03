@@ -1,5 +1,3 @@
-// components/share-card/variants/compact-variant.tsx
-
 import { forwardRef } from "react";
 import { Star, GitFork, Code, GitBranch } from "lucide-react";
 import { cn } from "@/lib/utils";

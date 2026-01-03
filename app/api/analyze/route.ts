@@ -1,5 +1,3 @@
-// api/analyze/route.ts
-
 import { streamText } from "ai";
 import {
   fetchRepoMetadata,
@@ -103,7 +101,6 @@ export async function POST(request: Request) {
 
     const model = openrouter.chat(MODEL_ID);
 
-    // Fetch metadata first to get default branch
     let metadata;
     try {
       metadata = await fetchRepoMetadata(owner, repo);
@@ -116,10 +113,8 @@ export async function POST(request: Request) {
       });
     }
 
-    // Determine which branch to analyze
     const targetBranch = parsedBody.branch || metadata.defaultBranch;
 
-    // Fetch branches, tree, and files in parallel
     let tree, importantFiles, branches;
     try {
       [tree, importantFiles, branches] = await Promise.all([
@@ -157,7 +152,6 @@ export async function POST(request: Request) {
       maxOutputTokens: AI_CONFIG.maxOutputTokens,
     });
 
-    // Create and return the stream with branch info
     const stream = createAnalysisStream(
       metadata,
       tree,

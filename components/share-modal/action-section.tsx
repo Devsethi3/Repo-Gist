@@ -1,5 +1,3 @@
-// components/share-modal/action-section.tsx 
-
 import { HugeiconsIcon, IconSvgElement } from "@hugeicons/react";
 
 interface ActionSectionProps {

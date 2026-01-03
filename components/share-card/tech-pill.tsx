@@ -1,5 +1,3 @@
-// components/share-card/tech-pill.tsx 
-
 import { cn } from "@/lib/utils";
 import { TechPillProps } from "./types";
 

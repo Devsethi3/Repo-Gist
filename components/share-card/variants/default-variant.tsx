@@ -1,5 +1,3 @@
-// components/share-card/variants/default-variant.tsx
-
 import { forwardRef } from "react";
 import { Terminal, GitBranch } from "lucide-react";
 import { cn } from "@/lib/utils";

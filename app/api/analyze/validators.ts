@@ -1,5 +1,3 @@
-// api/analyze/validators.ts
-
 import { validateGitHubUrl } from "@/lib/validators";
 
 export function sanitizeUrl(url: unknown): string {
@@ -25,7 +23,6 @@ export function sanitizeBranch(branch: unknown): string | undefined {
     throw new Error("Branch must be a string");
   }
 
-  // Sanitize branch name - allow alphanumeric, dash, underscore, slash, dot
   const sanitized = branch.trim().slice(0, 256);
   const validBranchPattern = /^[\w./-]+$/;
 

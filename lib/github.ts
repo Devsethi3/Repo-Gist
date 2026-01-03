@@ -1,5 +1,3 @@
-// lib/github.ts - Add branch fetching and update existing functions
-
 import { FileNode, FileStats, RepoMetadata, BranchInfo } from "./types";
 import { getLanguageFromExtension, getFileExtension } from "./utils";
 import { MAX_TREE_ITEMS, MAX_FILE_TREE_DEPTH } from "./constants";
