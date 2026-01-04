@@ -1,8 +1,8 @@
 # Contributing to RepoGist
 
-Thanks for your interest in contributing! 🎉 This guide will help you get started.
+Thanks for your interest in contributing! This guide will help you get started.
 
-## 🚀 Quick Start
+## Quick Start
 
 ```bash
 # 1. Fork and clone
