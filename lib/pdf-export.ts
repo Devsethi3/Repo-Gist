@@ -17,27 +17,29 @@ export async function generatePDFReport(result: AnalysisResult): Promise<Blob> {
 
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
-  const margin = 20;
+  const margin = 15;
   const contentWidth = pageWidth - margin * 2;
   let yPosition = margin;
 
-  // Caffeine Theme
+  // Refined Caffeine Palette
   const colors = {
-    espresso: { r: 59, g: 36, b: 27 } as RGB,
-    coffee: { r: 111, g: 78, b: 55 } as RGB,
-    latte: { r: 196, g: 164, b: 132 } as RGB,
-    cream: { r: 245, g: 240, b: 230 } as RGB,
-    caramel: { r: 198, g: 134, b: 66 } as RGB,
-    mocha: { r: 140, g: 102, b: 75 } as RGB,
-    black: { r: 28, g: 25, b: 23 } as RGB,
-    charcoal: { r: 64, g: 58, b: 54 } as RGB,
-    stone: { r: 120, g: 113, b: 108 } as RGB,
-    sand: { r: 214, g: 204, b: 194 } as RGB,
-    paper: { r: 253, g: 251, b: 247 } as RGB,
+    darkRoast: { r: 38, g: 28, b: 24 } as RGB,
+    espresso: { r: 54, g: 38, b: 32 } as RGB,
+    arabica: { r: 87, g: 63, b: 51 } as RGB,
+    mocha: { r: 121, g: 85, b: 61 } as RGB,
+    caramel: { r: 183, g: 135, b: 85 } as RGB,
+    latte: { r: 212, g: 185, b: 158 } as RGB,
+    foam: { r: 241, g: 235, b: 228 } as RGB,
+    cream: { r: 250, g: 247, b: 243 } as RGB,
     white: { r: 255, g: 255, b: 255 } as RGB,
-    success: { r: 76, g: 129, b: 89 } as RGB,
-    warning: { r: 180, g: 130, b: 60 } as RGB,
-    danger: { r: 168, g: 82, b: 75 } as RGB,
+    copper: { r: 176, g: 120, b: 80 } as RGB,
+    gold: { r: 198, g: 158, b: 98 } as RGB,
+    sage: { r: 94, g: 118, b: 95 } as RGB,
+    terracotta: { r: 168, g: 98, b: 78 } as RGB,
+    slate: { r: 88, g: 82, b: 78 } as RGB,
+    success: { r: 82, g: 126, b: 86 } as RGB,
+    warning: { r: 186, g: 142, b: 68 } as RGB,
+    danger: { r: 172, g: 88, b: 78 } as RGB,
   };
 
   const setColor = (color: RGB, type: "fill" | "text" | "draw" = "text") => {
@@ -46,8 +48,8 @@ export async function generatePDFReport(result: AnalysisResult): Promise<Blob> {
     else doc.setTextColor(color.r, color.g, color.b);
   };
 
-  const addNewPageIfNeeded = (requiredSpace: number = 25): boolean => {
-    if (yPosition + requiredSpace > pageHeight - 25) {
+  const addNewPageIfNeeded = (requiredSpace: number = 20): boolean => {
+    if (yPosition + requiredSpace > pageHeight - 20) {
       doc.addPage();
       yPosition = margin;
       addPageBackground();
@@ -57,442 +59,289 @@ export async function generatePDFReport(result: AnalysisResult): Promise<Blob> {
   };
 
   const addPageBackground = () => {
-    setColor(colors.paper, "fill");
+    setColor(colors.cream, "fill");
     doc.rect(0, 0, pageWidth, pageHeight, "F");
   };
 
   const getScoreColor = (score: number): RGB => {
-    if (score >= 70) return colors.success;
-    if (score >= 40) return colors.warning;
+    if (score >= 75) return colors.success;
+    if (score >= 50) return colors.warning;
     return colors.danger;
+  };
+
+  const getScoreLabel = (score: number): string => {
+    if (score >= 90) return "Excellent";
+    if (score >= 75) return "Good";
+    if (score >= 50) return "Fair";
+    if (score >= 25) return "Needs Work";
+    return "Critical";
   };
 
   const formatNumber = (num: number): string => {
     if (num >= 1000000) return (num / 1000000).toFixed(1) + "M";
     if (num >= 1000) return (num / 1000).toFixed(1) + "K";
-    return num.toString();
+    return num.toLocaleString();
   };
 
-  const drawDot = (x: number, y: number, color: RGB) => {
-    setColor(color, "fill");
-    doc.circle(x, y, 0.8, "F");
+  // Wrap text into multiple lines
+  const wrapText = (
+    text: string,
+    maxWidth: number,
+    fontSize: number
+  ): string[] => {
+    doc.setFontSize(fontSize);
+    return doc.splitTextToSize(text, maxWidth);
   };
 
-  const drawStatItem = (
-    x: number,
-    y: number,
-    label: string,
-    value: string,
-    dotColor: RGB
-  ): number => {
-    // Draw dot
-    drawDot(x + 1, y - 1, dotColor);
+  // === DRAWING FUNCTIONS ===
 
-    // Draw text
-    doc.setFontSize(8);
+  const drawHeroSection = () => {
+    setColor(colors.darkRoast, "fill");
+    doc.rect(0, 0, pageWidth, 55, "F");
+
+    // Accent line
+    setColor(colors.caramel, "fill");
+    doc.rect(0, 55, pageWidth, 2, "F");
+
+    doc.setFontSize(24);
+    doc.setFont("helvetica", "bold");
+    setColor(colors.white);
+    const repoName =
+      result.metadata.name.length > 25
+        ? result.metadata.name.substring(0, 25) + "..."
+        : result.metadata.name;
+    doc.text(repoName, margin, 25);
+
+    doc.setFontSize(9);
     doc.setFont("helvetica", "normal");
-    setColor(colors.stone);
-    doc.text(label, x + 4, y);
+    setColor(colors.latte);
+    doc.text(result.metadata.fullName, margin, 34);
 
-    doc.setFont("helvetica", "bold");
-    setColor(colors.charcoal);
-    const labelWidth = doc.getTextWidth(label + " ");
-    doc.text(value, x + 4 + labelWidth, y);
+    // Stats row
+    const statsY = 46;
+    let statsX = margin;
 
-    const totalWidth = 4 + labelWidth + doc.getTextWidth(value);
-    return totalWidth;
-  };
-
-  const drawDivider = () => {
-    setColor(colors.sand, "draw");
-    doc.setLineWidth(0.3);
-    doc.line(margin, yPosition, margin + 30, yPosition);
-    yPosition += 6;
-  };
-
-  const drawSectionHeader = (title: string) => {
-    addNewPageIfNeeded(25);
-    yPosition += 4;
-
-    doc.setFontSize(11);
-    doc.setFont("helvetica", "bold");
-    setColor(colors.espresso);
-    doc.text(title.toUpperCase(), margin, yPosition);
-
-    setColor(colors.latte, "draw");
-    doc.setLineWidth(0.5);
-    doc.line(
-      margin,
-      yPosition + 2,
-      margin + doc.getTextWidth(title.toUpperCase()) + 2,
-      yPosition + 2
-    );
-
-    yPosition += 10;
-  };
-
-  const drawTable = (
-    headers: string[],
-    rows: string[][],
-    colWidths: number[]
-  ) => {
-    const rowHeight = 8;
-    const headerHeight = 9;
-    const padding = 4;
-
-    addNewPageIfNeeded(headerHeight + Math.min(rows.length, 3) * rowHeight + 5);
-
-    setColor(colors.cream, "fill");
-    doc.rect(margin, yPosition, contentWidth, headerHeight, "F");
-
-    setColor(colors.latte, "draw");
-    doc.setLineWidth(0.3);
-    doc.line(
-      margin,
-      yPosition + headerHeight,
-      margin + contentWidth,
-      yPosition + headerHeight
-    );
-
-    doc.setFontSize(8);
-    doc.setFont("helvetica", "bold");
-    setColor(colors.coffee);
-
-    let xOffset = margin + padding;
-    headers.forEach((header, i) => {
-      doc.text(header, xOffset, yPosition + 6);
-      xOffset += colWidths[i];
-    });
-
-    yPosition += headerHeight;
-
-    rows.forEach((row) => {
-      if (addNewPageIfNeeded(rowHeight)) {
-        setColor(colors.cream, "fill");
-        doc.rect(margin, yPosition, contentWidth, headerHeight, "F");
-        setColor(colors.latte, "draw");
-        doc.setLineWidth(0.3);
-        doc.line(
-          margin,
-          yPosition + headerHeight,
-          margin + contentWidth,
-          yPosition + headerHeight
-        );
-
-        doc.setFontSize(8);
-        doc.setFont("helvetica", "bold");
-        setColor(colors.coffee);
-        let xOff = margin + padding;
-        headers.forEach((header, i) => {
-          doc.text(header, xOff, yPosition + 6);
-          xOff += colWidths[i];
-        });
-        yPosition += headerHeight;
-      }
-
-      setColor(colors.sand, "draw");
-      doc.setLineWidth(0.15);
-      doc.line(
-        margin,
-        yPosition + rowHeight,
-        margin + contentWidth,
-        yPosition + rowHeight
-      );
-
+    const drawStat = (value: string, label: string, dotColor: RGB) => {
+      setColor(dotColor, "fill");
+      doc.circle(statsX + 1.5, statsY - 1, 1.5, "F");
       doc.setFontSize(8);
+      doc.setFont("helvetica", "bold");
+      setColor(colors.white);
+      doc.text(value, statsX + 5, statsY);
+      const valueWidth = doc.getTextWidth(value);
       doc.setFont("helvetica", "normal");
-      setColor(colors.charcoal);
+      setColor(colors.latte);
+      doc.text(label, statsX + 6 + valueWidth, statsY);
+      statsX += valueWidth + doc.getTextWidth(label) + 15;
+    };
 
-      let xPos = margin + padding;
-      row.forEach((cell, i) => {
-        const maxWidth = colWidths[i] - padding * 2;
-        let displayText = cell;
+    drawStat(formatNumber(result.metadata.stars), "stars", colors.gold);
+    drawStat(formatNumber(result.metadata.forks), "forks", colors.copper);
+    if (result.metadata.language) {
+      drawStat(result.metadata.language, "", colors.sage);
+    }
+    if (result.metadata.license) {
+      drawStat(result.metadata.license, "", colors.slate);
+    }
 
-        while (
-          doc.getTextWidth(displayText) > maxWidth &&
-          displayText.length > 3
-        ) {
-          displayText = displayText.slice(0, -4) + "...";
-        }
-
-        doc.text(displayText, xPos, yPosition + 5.5);
-        xPos += colWidths[i];
-      });
-
-      yPosition += rowHeight;
-    });
-
-    yPosition += 6;
+    yPosition = 65;
   };
 
-  const drawScoreCircle = (
-    x: number,
-    y: number,
-    score: number,
-    label: string
-  ) => {
-    const radius = 14;
+  const drawScoreCard = () => {
+    const cardY = yPosition;
+    const cardPaddingBottom = 4;
+    const cardHeight = 48 + cardPaddingBottom;
+    const innerHeight = cardHeight - cardPaddingBottom;
+    const score = result.scores?.overall || 0;
     const scoreColor = getScoreColor(score);
 
-    // Background circle
-    setColor(colors.sand, "draw");
-    doc.setLineWidth(1.5);
-    doc.circle(x, y, radius, "S");
+    // Card background
+    setColor(colors.white, "fill");
+    doc.roundedRect(margin, cardY, contentWidth, cardHeight, 3, 3, "F");
+    setColor(colors.latte, "draw");
+    doc.setLineWidth(0.3);
+    doc.roundedRect(margin, cardY, contentWidth, cardHeight, 3, 3, "S");
 
-    // Score arc
+    // === LEFT SECTION - Main Score ===
+    const circleRadius = 16;
+    const scoreX = margin + 24;
+    const scoreY = cardY + innerHeight / 2;
+
+    // Progress track
+    setColor(colors.foam, "draw");
+    doc.setLineWidth(3);
+    doc.circle(scoreX, scoreY, circleRadius, "S");
+
+    // Progress arc
     setColor(scoreColor, "draw");
-    doc.setLineWidth(2);
+    doc.setLineWidth(3);
+    const totalSegments = 60;
+    const filledSegments = Math.floor((score / 100) * totalSegments);
 
-    const segments = Math.floor((score / 100) * 32);
-    for (let i = 0; i < segments; i++) {
-      const startAngle = (i * (360 / 32) - 90) * (Math.PI / 180);
-      const endAngle = ((i + 1) * (360 / 32) - 90) * (Math.PI / 180);
-      const x1 = x + radius * Math.cos(startAngle);
-      const y1 = y + radius * Math.sin(startAngle);
-      const x2 = x + radius * Math.cos(endAngle);
-      const y2 = y + radius * Math.sin(endAngle);
+    for (let i = 0; i < filledSegments; i++) {
+      const startAngle = (i * (360 / totalSegments) - 90) * (Math.PI / 180);
+      const endAngle =
+        ((i + 0.8) * (360 / totalSegments) - 90) * (Math.PI / 180);
+      const x1 = scoreX + circleRadius * Math.cos(startAngle);
+      const y1 = scoreY + circleRadius * Math.sin(startAngle);
+      const x2 = scoreX + circleRadius * Math.cos(endAngle);
+      const y2 = scoreY + circleRadius * Math.sin(endAngle);
       doc.line(x1, y1, x2, y2);
     }
 
-    doc.setFontSize(16);
+    // Score number
+    doc.setFontSize(18);
     doc.setFont("helvetica", "bold");
-    setColor(colors.espresso);
-    doc.text(score.toString(), x, y + 2, { align: "center" });
+    setColor(colors.darkRoast);
+    doc.text(score.toString(), scoreX, scoreY + 1, { align: "center" });
 
-    doc.setFontSize(7);
-    doc.setFont("helvetica", "normal");
-    setColor(colors.stone);
-    doc.text(label, x, y + radius + 5, { align: "center" });
-  };
-
-  const drawScoreBar = (
-    x: number,
-    y: number,
-    width: number,
-    score: number,
-    label: string
-  ): number => {
-    const barHeight = 3;
-    const scoreColor = getScoreColor(score);
-
-    doc.setFontSize(8);
-    doc.setFont("helvetica", "normal");
-    setColor(colors.charcoal);
-    doc.text(label, x, y);
-
+    // Score label
+    doc.setFontSize(6);
     doc.setFont("helvetica", "bold");
     setColor(scoreColor);
-    doc.text(score.toString(), x + width + 10, y);
+    doc.text(getScoreLabel(score).toUpperCase(), scoreX, scoreY + 22, {
+      align: "center",
+    });
 
-    setColor(colors.sand, "fill");
-    doc.roundedRect(x, y + 2, width, barHeight, 1, 1, "F");
+    // === DIVIDER ===
+    const dividerX = margin + 48;
+    setColor(colors.foam, "draw");
+    doc.setLineWidth(0.3);
+    doc.line(dividerX, cardY + 6, dividerX, cardY + innerHeight - 6);
 
-    const scoreWidth = Math.max((score / 100) * width, 2);
-    setColor(scoreColor, "fill");
-    doc.roundedRect(x, y + 2, scoreWidth, barHeight, 1, 1, "F");
+    // === RIGHT SECTION - Score Grid (2 columns) ===
+    const gridStartX = dividerX + 6;
+    const gridWidth = contentWidth - (gridStartX - margin) - 4;
+    const colWidth = gridWidth / 2;
 
-    return y + 12;
+    const scoreItems = [
+      { label: "Code Quality", value: result.scores?.codeQuality || 0 },
+      { label: "Documentation", value: result.scores?.documentation || 0 },
+      { label: "Security", value: result.scores?.security || 0 },
+      { label: "Maintainability", value: result.scores?.maintainability || 0 },
+      { label: "Test Coverage", value: result.scores?.testCoverage || 0 },
+      { label: "Dependencies", value: result.scores?.dependencies || 0 },
+    ];
+
+    const rowHeight = 13;
+    const barHeight = 3;
+    const barWidth = colWidth - 22;
+
+    scoreItems.forEach((item, index) => {
+      const col = index % 2;
+      const row = Math.floor(index / 2);
+      const x = gridStartX + col * colWidth;
+      const y = cardY + 10 + row * rowHeight;
+      const itemColor = getScoreColor(item.value);
+
+      // Label and value
+      doc.setFontSize(7);
+      doc.setFont("helvetica", "normal");
+      setColor(colors.slate);
+      doc.text(item.label, x, y);
+
+      doc.setFont("helvetica", "bold");
+      setColor(itemColor);
+      doc.text(item.value.toString(), x + colWidth - 8, y, { align: "right" });
+
+      // Bar
+      setColor(colors.foam, "fill");
+      doc.roundedRect(x, y + 2, barWidth, barHeight, 1, 1, "F");
+
+      const fillWidth = Math.max((item.value / 100) * barWidth, 2);
+      setColor(itemColor, "fill");
+      doc.roundedRect(x, y + 2, fillWidth, barHeight, 1, 1, "F");
+    });
+
+    yPosition = cardY + cardHeight + 8;
   };
 
-  const drawTextBlock = (
-    text: string,
-    x: number,
-    startY: number,
-    maxWidth: number,
-    fontSize: number = 9,
-    lineHeight: number = 4.5
-  ): number => {
-    doc.setFontSize(fontSize);
+  const drawSectionTitle = (title: string) => {
+    addNewPageIfNeeded(15);
+    yPosition += 4;
+
+    setColor(colors.caramel, "fill");
+    doc.rect(margin, yPosition - 1.5, 1, 5, "F");
+
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "bold");
+    setColor(colors.darkRoast);
+    doc.text(title.toUpperCase(), margin + 5, yPosition + 2);
+
+    yPosition += 8;
+  };
+
+  const drawTextBlock = (text: string, maxLines: number = 6): void => {
+    doc.setFontSize(8);
     doc.setFont("helvetica", "normal");
-    setColor(colors.charcoal);
+    setColor(colors.arabica);
 
-    const lines = doc.splitTextToSize(text, maxWidth);
+    const lines = wrapText(text, contentWidth, 8);
+    const displayLines = lines.slice(0, maxLines);
+    const lineHeight = 4;
 
-    lines.forEach((line: string, i: number) => {
-      const currentY = startY + i * lineHeight;
-
-      if (currentY > pageHeight - 25) {
+    displayLines.forEach((line: string) => {
+      if (yPosition > pageHeight - 20) {
         doc.addPage();
         addPageBackground();
         yPosition = margin;
       }
-
-      doc.text(line, x, startY + i * lineHeight);
+      doc.text(line, margin, yPosition);
+      yPosition += lineHeight;
     });
 
-    return lines.length * lineHeight;
+    yPosition += 2;
   };
 
-
-  addPageBackground();
-
-  setColor(colors.caramel, "fill");
-  doc.rect(margin, yPosition, 3, 18, "F");
-
-  doc.setFontSize(22);
-  doc.setFont("helvetica", "bold");
-  setColor(colors.espresso);
-  doc.text(result.metadata.name, margin + 8, yPosition + 8);
-
-  doc.setFontSize(9);
-  doc.setFont("helvetica", "normal");
-  setColor(colors.stone);
-  doc.text(result.metadata.fullName, margin + 8, yPosition + 15);
-
-  yPosition += 24;
-
-  const statsY = yPosition;
-  let statsX = margin;
-  const statGap = 16;
-
-  statsX +=
-    drawStatItem(
-      statsX,
-      statsY,
-      "stars",
-      formatNumber(result.metadata.stars),
-      colors.caramel
-    ) + statGap;
-
-  statsX +=
-    drawStatItem(
-      statsX,
-      statsY,
-      "forks",
-      formatNumber(result.metadata.forks),
-      colors.mocha
-    ) + statGap;
-
-  if (result.metadata.language) {
-    statsX +=
-      drawStatItem(
-        statsX,
-        statsY,
-        "",
-        result.metadata.language,
-        colors.coffee
-      ) + statGap;
-  }
-
-  if (result.metadata.license) {
-    drawStatItem(statsX, statsY, "License", result.metadata.license, colors.stone);
-  }
-
-  yPosition += 10;
-  drawDivider();
-
-  const scoreY = yPosition;
-
-  drawScoreCircle(
-    margin + 20,
-    scoreY + 16,
-    result.scores?.overall || 0,
-    "Overall Score"
-  );
-
-  const barX = margin + 50;
-  const barWidth = 45;
-  const barY = scoreY + 4;
-
-  const scores = [
-    { label: "Code Quality", value: result.scores?.codeQuality || 0 },
-    { label: "Documentation", value: result.scores?.documentation || 0 },
-    { label: "Security", value: result.scores?.security || 0 },
-    { label: "Maintainability", value: result.scores?.maintainability || 0 },
-    { label: "Test Coverage", value: result.scores?.testCoverage || 0 },
-    { label: "Dependencies", value: result.scores?.dependencies || 0 },
-  ];
-
-  scores.slice(0, 3).forEach((s, i) => {
-    drawScoreBar(barX, barY + i * 11, barWidth, s.value, s.label);
-  });
-
-  scores.slice(3).forEach((s, i) => {
-    drawScoreBar(barX + 62, barY + i * 11, barWidth, s.value, s.label);
-  });
-
-  yPosition = scoreY + 42;
-
-  if (result.summary) {
-    drawSectionHeader("Summary");
-
-    const summaryHeight = drawTextBlock(
-      result.summary,
-      margin,
-      yPosition,
-      contentWidth,
-      9,
-      4.5
-    );
-
-    yPosition += summaryHeight + 6;
-  }
-
-  if (result.whatItDoes) {
-    addNewPageIfNeeded(20);
-
-    doc.setFontSize(8);
-    doc.setFont("helvetica", "bold");
-    setColor(colors.coffee);
-    doc.text("PURPOSE", margin, yPosition);
-
-    yPosition += 5;
-
-    const purposeHeight = drawTextBlock(
-      result.whatItDoes,
-      margin,
-      yPosition,
-      contentWidth,
-      9,
-      4.5
-    );
-
-    yPosition += purposeHeight + 6;
-  }
-
-  if (result.targetAudience) {
-    addNewPageIfNeeded(20);
-
-    doc.setFontSize(8);
-    doc.setFont("helvetica", "bold");
-    setColor(colors.coffee);
-    doc.text("TARGET AUDIENCE", margin, yPosition);
-
-    yPosition += 5;
-
-    const audienceHeight = drawTextBlock(
-      result.targetAudience,
-      margin,
-      yPosition,
-      contentWidth,
-      9,
-      4.5
-    );
-
-    yPosition += audienceHeight + 6;
-  }
-
-  if (result.techStack && result.techStack.length > 0) {
-    addNewPageIfNeeded(15);
-
-    doc.setFontSize(8);
-    doc.setFont("helvetica", "bold");
-    setColor(colors.coffee);
-    doc.text("TECH STACK", margin, yPosition);
-
-    yPosition += 6;
-
-    let techX = margin;
-    const techY = yPosition;
-    const pillPadding = 3;
-    const pillHeight = 5;
-    const pillGap = 2;
-    let currentRow = 0;
-    const rowHeight = 7;
+  const drawCompactInfoRow = (label: string, content: string) => {
+    addNewPageIfNeeded(12);
 
     doc.setFontSize(7);
+    doc.setFont("helvetica", "bold");
+    setColor(colors.mocha);
+    doc.text(label.toUpperCase(), margin, yPosition);
 
-    result.techStack.slice(0, 12).forEach((tech) => {
+    yPosition += 4;
+
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "normal");
+    setColor(colors.arabica);
+
+    const lines = wrapText(content, contentWidth, 8);
+    const displayLines = lines.slice(0, 3);
+
+    displayLines.forEach((line: string) => {
+      doc.text(line, margin, yPosition);
+      yPosition += 4;
+    });
+
+    yPosition += 3;
+  };
+
+  const drawTechStackCompact = () => {
+    if (!result.techStack || result.techStack.length === 0) return;
+
+    addNewPageIfNeeded(18);
+    drawSectionTitle("Technology Stack");
+
+    let techX = margin;
+    const pillHeight = 5;
+    const pillPadding = 3;
+    const pillGap = 3;
+    const rowGap = 7;
+    let currentRow = 0;
+    const startY = yPosition;
+
+    const techColors = [
+      colors.copper,
+      colors.sage,
+      colors.mocha,
+      colors.terracotta,
+      colors.slate,
+    ];
+
+    result.techStack.slice(0, 12).forEach((tech, index) => {
+      doc.setFontSize(7);
       const textWidth = doc.getTextWidth(tech);
       const pillWidth = textWidth + pillPadding * 2;
 
@@ -501,154 +350,395 @@ export async function generatePDFReport(result: AnalysisResult): Promise<Blob> {
         currentRow++;
       }
 
-      const pillY = techY + currentRow * rowHeight;
+      const pillY = startY + currentRow * rowGap;
+      const pillColor = techColors[index % techColors.length];
 
-      // Pill background
-      setColor(colors.cream, "fill");
-      doc.roundedRect(techX, pillY - 3.5, pillWidth, pillHeight, 1, 1, "F");
+      setColor(pillColor, "fill");
+      doc.roundedRect(techX, pillY - 3.5, pillWidth, pillHeight, 1.5, 1.5, "F");
 
-      // Pill border
-      setColor(colors.sand, "draw");
-      doc.setLineWidth(0.2);
-      doc.roundedRect(techX, pillY - 3.5, pillWidth, pillHeight, 1, 1, "S");
-
-      // Text
-      setColor(colors.coffee);
+      doc.setFont("helvetica", "bold");
+      setColor(colors.white);
       doc.text(tech, techX + pillPadding, pillY);
 
       techX += pillWidth + pillGap;
     });
 
-    yPosition = techY + (currentRow + 1) * rowHeight + 4;
-  }
+    yPosition = startY + (currentRow + 1) * rowGap + 4;
+  };
 
-  // === QUICK START ===
-  if (result.howToRun && result.howToRun.length > 0) {
-    drawSectionHeader("Quick Start");
+  const drawCommandsCompact = () => {
+    if (!result.howToRun || result.howToRun.length === 0) return;
 
-    const commands = result.howToRun.slice(0, 4);
+    addNewPageIfNeeded(25);
+    drawSectionTitle("Quick Start");
 
-    setColor(colors.espresso, "fill");
-    const codeHeight = commands.length * 6 + 6;
-    doc.roundedRect(margin, yPosition, contentWidth, codeHeight, 2, 2, "F");
+    const commands = result.howToRun.slice(0, 3);
+    const cmdHeight = commands.length * 6 + 8;
 
-    doc.setFontSize(8);
+    setColor(colors.darkRoast, "fill");
+    doc.roundedRect(margin, yPosition, contentWidth, cmdHeight, 3, 3, "F");
+
+    doc.setFontSize(7);
     doc.setFont("courier", "normal");
-    setColor(colors.cream);
 
     commands.forEach((cmd, i) => {
-      const cmdText = cmd.length > 75 ? cmd.substring(0, 75) + "..." : cmd;
-      doc.text("$ " + cmdText, margin + 4, yPosition + 5 + i * 6);
+      const cmdText = cmd.length > 80 ? cmd.substring(0, 80) + "..." : cmd;
+      setColor(colors.caramel);
+      doc.text("$", margin + 4, yPosition + 6 + i * 6);
+      setColor(colors.cream);
+      doc.text(cmdText, margin + 9, yPosition + 6 + i * 6);
     });
 
-    yPosition += codeHeight + 8;
-  }
+    yPosition += cmdHeight + 6;
+  };
 
-  // === KEY FOLDERS ===
-  if (result.keyFolders && result.keyFolders.length > 0) {
-    drawSectionHeader("Structure");
+  // === TABLE-BASED LAYOUTS ===
 
-    const folderRows = result.keyFolders
-      .slice(0, 5)
-      .map((f) => [
-        f.name,
-        f.description.substring(0, 60) +
-          (f.description.length > 60 ? "..." : ""),
-      ]);
+  const drawTable = (
+    headers: {
+      label: string;
+      width: number;
+      align?: "left" | "center" | "right";
+    }[],
+    rows: { cells: string[]; color?: RGB }[],
+    options: {
+      headerBg?: RGB;
+      rowHeight?: number;
+      fontSize?: number;
+      wrapText?: boolean;
+    } = {}
+  ) => {
+    const {
+      headerBg = colors.mocha,
+      rowHeight = 7,
+      fontSize = 7,
+      wrapText: shouldWrap = false,
+    } = options;
 
-    drawTable(["Folder", "Purpose"], folderRows, [35, contentWidth - 35]);
-  }
+    const headerHeight = 6;
 
-  // === INSIGHTS ===
-  if (result.insights && result.insights.length > 0) {
-    drawSectionHeader("Insights");
+    // Header
+    setColor(headerBg, "fill");
+    doc.roundedRect(
+      margin,
+      yPosition,
+      contentWidth,
+      headerHeight,
+      1.5,
+      1.5,
+      "F"
+    );
 
-    const topInsights = result.insights.slice(0, 5);
+    doc.setFontSize(6);
+    doc.setFont("helvetica", "bold");
+    setColor(colors.white);
 
-    const insightRows = topInsights.map((insight) => {
+    let headerX = margin + 3;
+    headers.forEach((header) => {
+      const align = header.align || "left";
+      let textX = headerX;
+      if (align === "center") textX = headerX + header.width / 2;
+      else if (align === "right") textX = headerX + header.width - 3;
+
+      doc.text(header.label.toUpperCase(), textX, yPosition + 4, { align });
+      headerX += header.width;
+    });
+
+    yPosition += headerHeight;
+
+    // Rows
+    rows.forEach((row, rowIndex) => {
+      // Calculate row height based on content
+      let maxLines = 1;
+      if (shouldWrap) {
+        row.cells.forEach((cell, cellIndex) => {
+          const lines = wrapText(cell, headers[cellIndex].width - 4, fontSize);
+          maxLines = Math.max(maxLines, lines.length);
+        });
+      }
+
+      const actualRowHeight = shouldWrap
+        ? Math.max(rowHeight, maxLines * 3.5 + 2)
+        : rowHeight;
+
+      if (addNewPageIfNeeded(actualRowHeight + 2)) {
+        // Redraw header on new page
+        setColor(headerBg, "fill");
+        doc.roundedRect(
+          margin,
+          yPosition,
+          contentWidth,
+          headerHeight,
+          1.5,
+          1.5,
+          "F"
+        );
+        doc.setFontSize(6);
+        doc.setFont("helvetica", "bold");
+        setColor(colors.white);
+        let hX = margin + 3;
+        headers.forEach((header) => {
+          const align = header.align || "left";
+          let textX = hX;
+          if (align === "center") textX = hX + header.width / 2;
+          else if (align === "right") textX = hX + header.width - 3;
+          doc.text(header.label.toUpperCase(), textX, yPosition + 4, { align });
+          hX += header.width;
+        });
+        yPosition += headerHeight;
+      }
+
+      // Alternating row background
+      if (rowIndex % 2 === 0) {
+        setColor(colors.white, "fill");
+      } else {
+        setColor(colors.foam, "fill");
+      }
+      doc.rect(margin, yPosition, contentWidth, actualRowHeight, "F");
+
+      // Row border
+      setColor(colors.latte, "draw");
+      doc.setLineWidth(0.15);
+      doc.line(
+        margin,
+        yPosition + actualRowHeight,
+        margin + contentWidth,
+        yPosition + actualRowHeight
+      );
+
+      // Cell content
+      doc.setFontSize(fontSize);
+      let cellX = margin + 3;
+
+      row.cells.forEach((cell, cellIndex) => {
+        const header = headers[cellIndex];
+        const align = header.align || "left";
+
+        if (row.color && cellIndex === row.cells.length - 1) {
+          setColor(row.color);
+        } else {
+          setColor(colors.arabica);
+        }
+
+        doc.setFont("helvetica", "normal");
+
+        if (shouldWrap) {
+          const lines = wrapText(cell, header.width - 4, fontSize);
+          lines.forEach((line: string, lineIndex: number) => {
+            let textX = cellX;
+            if (align === "center") textX = cellX + header.width / 2 - 1.5;
+            else if (align === "right") textX = cellX + header.width - 6;
+            doc.text(line, textX, yPosition + 4 + lineIndex * 3.5, { align });
+          });
+        } else {
+          let displayText = cell;
+          const maxWidth = header.width - 4;
+          if (doc.getTextWidth(displayText) > maxWidth) {
+            while (
+              doc.getTextWidth(displayText + "...") > maxWidth &&
+              displayText.length > 0
+            ) {
+              displayText = displayText.slice(0, -1);
+            }
+            displayText += "...";
+          }
+
+          let textX = cellX;
+          if (align === "center") textX = cellX + header.width / 2 - 1.5;
+          else if (align === "right") textX = cellX + header.width - 6;
+
+          doc.text(displayText, textX, yPosition + 4.5, { align });
+        }
+
+        cellX += header.width;
+      });
+
+      yPosition += actualRowHeight;
+    });
+
+    yPosition += 4;
+  };
+
+  const drawStructureTable = () => {
+    if (!result.keyFolders || result.keyFolders.length === 0) return;
+
+    addNewPageIfNeeded(25);
+    drawSectionTitle("Project Structure");
+
+    const headers = [
+      { label: "Folder", width: 35 },
+      { label: "Description", width: contentWidth - 35 },
+    ];
+
+    const rows = result.keyFolders.slice(0, 8).map((folder) => ({
+      cells: [folder.name, folder.description],
+    }));
+
+    drawTable(headers, rows, {
+      headerBg: colors.copper,
+      rowHeight: 8,
+      fontSize: 7,
+      wrapText: true,
+    });
+  };
+
+  const drawInsightsTable = () => {
+    if (!result.insights || result.insights.length === 0) return;
+
+    addNewPageIfNeeded(25);
+    drawSectionTitle("Key Insights");
+
+    const headers = [
+      { label: "Type", width: 18 },
+      { label: "Finding", width: contentWidth - 40 },
+      { label: "Priority", width: 22, align: "center" as const },
+    ];
+
+    const rows = result.insights.slice(0, 6).map((insight) => {
       const typeLabel =
         insight.type === "strength"
-          ? "+"
+          ? "✓ Good"
           : insight.type === "warning"
-          ? "!"
-          : "-";
-      return [
-        typeLabel,
-        insight.title.substring(0, 45) +
-          (insight.title.length > 45 ? "..." : ""),
-        insight.priority.charAt(0).toUpperCase() + insight.priority.slice(1),
-      ];
+          ? "⚠ Warning"
+          : "✗ Issue";
+      const priorityColor =
+        insight.priority === "high"
+          ? colors.danger
+          : insight.priority === "medium"
+          ? colors.warning
+          : colors.sage;
+
+      return {
+        cells: [typeLabel, insight.title, insight.priority.toUpperCase()],
+        color: priorityColor,
+      };
     });
 
-    drawTable(["", "Finding", "Priority"], insightRows, [
-      8,
-      contentWidth - 33,
-      25,
-    ]);
-  }
-
-  if (result.refactors && result.refactors.length > 0) {
-    drawSectionHeader("Refactoring");
-
-    const refactorRows = result.refactors
-      .slice(0, 4)
-      .map((r) => [
-        r.title.substring(0, 45) + (r.title.length > 45 ? "..." : ""),
-        r.impact.charAt(0).toUpperCase() + r.impact.slice(1),
-        r.effort.charAt(0).toUpperCase() + r.effort.slice(1),
-      ]);
-
-    drawTable(["Opportunity", "Impact", "Effort"], refactorRows, [
-      contentWidth - 45,
-      22,
-      23,
-    ]);
-  }
-
-  if (result.automations && result.automations.length > 0) {
-    drawSectionHeader("Automations");
-
-    const autoRows = result.automations
-      .slice(0, 4)
-      .map((a) => [
-        a.type.replace("-", " ").charAt(0).toUpperCase() +
-          a.type.replace("-", " ").slice(1),
-        a.title.substring(0, 55) + (a.title.length > 55 ? "..." : ""),
-      ]);
-
-    drawTable(["Type", "Suggestion"], autoRows, [30, contentWidth - 30]);
-  }
-
-  const totalPages = doc.getNumberOfPages();
-
-  for (let i = 1; i <= totalPages; i++) {
-    doc.setPage(i);
-
-    setColor(colors.sand, "draw");
-    doc.setLineWidth(0.3);
-    doc.line(margin, pageHeight - 15, pageWidth - margin, pageHeight - 15);
-
-    doc.setFontSize(8);
-    doc.setFont("helvetica", "normal");
-    setColor(colors.mocha);
-    doc.text("RepoGist", margin, pageHeight - 8);
-
-    setColor(colors.stone);
-    doc.text(i + " / " + totalPages, pageWidth / 2, pageHeight - 8, {
-      align: "center",
+    drawTable(headers, rows, {
+      headerBg: colors.arabica,
+      rowHeight: 7,
+      fontSize: 7,
     });
+  };
 
-    doc.text(
-      new Date().toLocaleDateString("en-US", {
+  const drawRefactorsTable = () => {
+    if (!result.refactors || result.refactors.length === 0) return;
+
+    addNewPageIfNeeded(25);
+    drawSectionTitle("Refactoring Opportunities");
+
+    const headers = [
+      { label: "Opportunity", width: contentWidth - 44 },
+      { label: "Impact", width: 22, align: "center" as const },
+      { label: "Effort", width: 22, align: "center" as const },
+    ];
+
+    const rows = result.refactors.slice(0, 5).map((refactor) => ({
+      cells: [
+        refactor.title,
+        refactor.impact.toUpperCase(),
+        refactor.effort.toUpperCase(),
+      ],
+    }));
+
+    drawTable(headers, rows, {
+      headerBg: colors.mocha,
+      rowHeight: 7,
+      fontSize: 7,
+    });
+  };
+
+  const drawAutomationsTable = () => {
+    if (!result.automations || result.automations.length === 0) return;
+
+    addNewPageIfNeeded(25);
+    drawSectionTitle("Automation Suggestions");
+
+    const headers = [
+      { label: "Type", width: 28 },
+      { label: "Suggestion", width: contentWidth - 28 },
+    ];
+
+    const rows = result.automations.slice(0, 5).map((automation) => ({
+      cells: [
+        automation.type.toUpperCase().replace("-", " "),
+        automation.title,
+      ],
+    }));
+
+    drawTable(headers, rows, {
+      headerBg: colors.sage,
+      rowHeight: 8,
+      fontSize: 7,
+      wrapText: true,
+    });
+  };
+
+  const addFooter = () => {
+    const totalPages = doc.getNumberOfPages();
+
+    for (let i = 1; i <= totalPages; i++) {
+      doc.setPage(i);
+
+      setColor(colors.latte, "draw");
+      doc.setLineWidth(0.2);
+      doc.line(margin, pageHeight - 12, pageWidth - margin, pageHeight - 12);
+
+      doc.setFontSize(7);
+      doc.setFont("helvetica", "bold");
+      setColor(colors.mocha);
+      doc.text("RepoGist", margin, pageHeight - 6);
+
+      doc.setFont("helvetica", "normal");
+      setColor(colors.slate);
+      doc.text(`${i} / ${totalPages}`, pageWidth / 2, pageHeight - 6, {
+        align: "center",
+      });
+
+      const date = new Date().toLocaleDateString("en-US", {
         year: "numeric",
         month: "short",
         day: "numeric",
-      }),
-      pageWidth - margin,
-      pageHeight - 8,
-      { align: "right" }
-    );
+      });
+      doc.text(date, pageWidth - margin, pageHeight - 6, { align: "right" });
+    }
+  };
+
+  // === BUILD THE DOCUMENT ===
+
+  addPageBackground();
+  drawHeroSection();
+  drawScoreCard();
+
+  // Summary section - compact
+  if (result.summary) {
+    drawSectionTitle("Executive Summary");
+    drawTextBlock(result.summary, 5);
   }
+
+  // Purpose & Audience - compact inline
+  if (result.whatItDoes) {
+    drawCompactInfoRow("Purpose", result.whatItDoes);
+  }
+
+  if (result.targetAudience) {
+    drawCompactInfoRow("Target Audience", result.targetAudience);
+  }
+
+  // Tech stack
+  drawTechStackCompact();
+
+  // Commands
+  drawCommandsCompact();
+
+  // Tables for structured data
+  drawStructureTable();
+  drawInsightsTable();
+  drawRefactorsTable();
+  drawAutomationsTable();
+
+  // Footer
+  addFooter();
 
   return doc.output("blob");
 }
@@ -663,7 +753,7 @@ export async function downloadPDFReport(
 
     const link = document.createElement("a");
     link.href = url;
-    link.download = filename || result.metadata.name + "-report.pdf";
+    link.download = filename || `${result.metadata.name}-analysis.pdf`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
