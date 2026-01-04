@@ -1,6 +1,6 @@
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { SharePageClient } from "./share-page-client";
+import { SharePageClient } from "../../../components/share-page-client";
 
 interface SharePageProps {
   params: Promise<{
