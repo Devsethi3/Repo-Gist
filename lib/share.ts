@@ -81,6 +81,10 @@ function formatNumberShort(num: number): string {
   return num.toString();
 }
 
+function formatNumber(num: number): string {
+  return num.toLocaleString();
+}
+
 const SITE_URL = "https://repo-gist.vercel.app";
 
 export function generateShareUrl(data: ShareCardData): string {
@@ -160,6 +164,39 @@ function getScoreRating(score: number): string {
   if (score >= 60) return "good";
   if (score >= 40) return "fair";
   return "needs improvement";
+}
+
+function getScoreEmoji(score: number): string {
+  if (score >= 90) return "🏆";
+  if (score >= 80) return "🟢";
+  if (score >= 70) return "🟡";
+  if (score >= 60) return "🟠";
+  if (score >= 40) return "🔴";
+  return "⚠️";
+}
+
+function getScoreBar(score: number, length: number = 10): string {
+  const filled = Math.round((score / 100) * length);
+  const empty = length - filled;
+  return "█".repeat(filled) + "░".repeat(empty);
+}
+
+function getImpactBadge(impact: string): string {
+  const badges: Record<string, string> = {
+    high: "🔴 High",
+    medium: "🟡 Medium",
+    low: "🟢 Low",
+  };
+  return badges[impact.toLowerCase()] || impact;
+}
+
+function getEffortBadge(effort: string): string {
+  const badges: Record<string, string> = {
+    high: "⏱️ High Effort",
+    medium: "⏱️ Medium Effort",
+    low: "⏱️ Low Effort",
+  };
+  return badges[effort.toLowerCase()] || effort;
 }
 
 /**
@@ -366,7 +403,7 @@ export function generateSummaryText(result: Partial<AnalysisResult>): string {
 }
 
 /**
- * Generate markdown summary for copying
+ * Generate detailed, professionally styled markdown documentation
  */
 export function generateMarkdownSummary(
   result: Partial<AnalysisResult>
@@ -374,166 +411,593 @@ export function generateMarkdownSummary(
   if (!result.metadata) return "";
 
   const lines: string[] = [];
+  const {
+    metadata,
+    scores,
+    techStack,
+    insights,
+    keyFolders,
+    howToRun,
+    refactors,
+  } = result;
 
-  // Header
-  lines.push(`# Repository Analysis: ${result.metadata.fullName}`);
+  // ═══════════════════════════════════════════════════════════════════════════
+  // HEADER SECTION
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  lines.push(`<div align="center">`);
+  lines.push(``);
+  lines.push(`# 📊 Repository Analysis Report`);
+  lines.push(``);
+  lines.push(`## ${metadata.fullName}`);
+  lines.push(``);
   if (result.branch) {
-    lines.push(`**Branch:** \`${result.branch}\``);
+    lines.push(`**🌿 Branch:** \`${result.branch}\``);
+    lines.push(``);
   }
-  lines.push("");
+  lines.push(``);
 
-  // Badges
-  const badgeParts: string[] = [];
-  badgeParts.push(
-    `![Stars](https://img.shields.io/github/stars/${result.metadata.fullName}?style=flat-square)`
+  // Badges row
+  const badges: string[] = [];
+  badges.push(
+    `![Stars](https://img.shields.io/github/stars/${metadata.fullName}?style=for-the-badge&logo=github&color=yellow)`
   );
-  badgeParts.push(
-    `![Forks](https://img.shields.io/github/forks/${result.metadata.fullName}?style=flat-square)`
+  badges.push(
+    `![Forks](https://img.shields.io/github/forks/${metadata.fullName}?style=for-the-badge&logo=github&color=blue)`
   );
-  if (result.metadata.language) {
-    badgeParts.push(
-      `![Language](https://img.shields.io/github/languages/top/${result.metadata.fullName}?style=flat-square)`
+  if (metadata.language) {
+    badges.push(
+      `![Language](https://img.shields.io/badge/${encodeURIComponent(
+        metadata.language
+      )}-language-green?style=for-the-badge)`
     );
   }
-  lines.push(badgeParts.join(" "));
-  lines.push("");
+  if (metadata.license) {
+    badges.push(
+      `![License](https://img.shields.io/badge/${encodeURIComponent(
+        metadata.license
+      )}-license-purple?style=for-the-badge)`
+    );
+  }
+  lines.push(badges.join(" "));
+  lines.push(``);
+  lines.push(`</div>`);
+  lines.push(``);
+  lines.push(`---`);
+  lines.push(``);
 
-  // Summary
+  // ═══════════════════════════════════════════════════════════════════════════
+  // TABLE OF CONTENTS
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  lines.push(`## 📑 Table of Contents`);
+  lines.push(``);
+  lines.push(`- [Overview](#-overview)`);
+  lines.push(`- [Repository Statistics](#-repository-statistics)`);
+  if (scores) lines.push(`- [Quality Assessment](#-quality-assessment)`);
+  if (techStack && techStack.length > 0)
+    lines.push(`- [Technology Stack](#-technology-stack)`);
+  if (keyFolders && keyFolders.length > 0)
+    lines.push(`- [Project Structure](#-project-structure)`);
+  if (howToRun && howToRun.length > 0)
+    lines.push(`- [Getting Started](#-getting-started)`);
+  if (insights && insights.length > 0)
+    lines.push(`- [Analysis Insights](#-analysis-insights)`);
+  if (refactors && refactors.length > 0)
+    lines.push(
+      `- [Refactoring Recommendations](#-refactoring-recommendations)`
+    );
+  lines.push(`- [Analysis Metadata](#-analysis-metadata)`);
+  lines.push(``);
+  lines.push(`---`);
+  lines.push(``);
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // OVERVIEW SECTION
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  lines.push(`## 📖 Overview`);
+  lines.push(``);
+
+  if (metadata.description) {
+    lines.push(`> ${metadata.description}`);
+    lines.push(``);
+  }
+
   if (result.summary) {
-    lines.push("## Summary");
+    lines.push(`### Summary`);
+    lines.push(``);
     lines.push(result.summary);
-    lines.push("");
+    lines.push(``);
   }
 
-  // What It Does
   if (result.whatItDoes) {
-    lines.push("## What It Does");
+    lines.push(`### What This Repository Does`);
+    lines.push(``);
     lines.push(result.whatItDoes);
-    lines.push("");
+    lines.push(``);
   }
 
-  // Target Audience
   if (result.targetAudience) {
-    lines.push("## Target Audience");
-    lines.push(result.targetAudience);
-    lines.push("");
+    lines.push(`### Target Audience`);
+    lines.push(``);
+    lines.push(`🎯 ${result.targetAudience}`);
+    lines.push(``);
   }
 
-  // Scores
-  if (result.scores) {
-    lines.push("## Quality Scores");
-    lines.push("");
-    lines.push("| Metric | Score | Rating |");
-    lines.push("|--------|-------|--------|");
+  lines.push(`---`);
+  lines.push(``);
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // REPOSITORY STATISTICS
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  lines.push(`## 📈 Repository Statistics`);
+  lines.push(``);
+  lines.push(`<table>`);
+  lines.push(`<tr>`);
+  lines.push(`<td align="center"><b>⭐ Stars</b></td>`);
+  lines.push(`<td align="center"><b>🍴 Forks</b></td>`);
+  lines.push(`<td align="center"><b>👀 Watchers</b></td>`);
+  lines.push(`<td align="center"><b>💻 Language</b></td>`);
+  lines.push(`<td align="center"><b>📄 License</b></td>`);
+  lines.push(`</tr>`);
+  lines.push(`<tr>`);
+  lines.push(`<td align="center">${formatNumber(metadata.stars)}</td>`);
+  lines.push(`<td align="center">${formatNumber(metadata.forks)}</td>`);
+  lines.push(`<td align="center">${formatNumber(metadata.watchers)}</td>`);
+  lines.push(`<td align="center">${metadata.language || "N/A"}</td>`);
+  lines.push(`<td align="center">${metadata.license || "N/A"}</td>`);
+  lines.push(`</tr>`);
+  lines.push(`</table>`);
+  lines.push(``);
+  lines.push(`---`);
+  lines.push(``);
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // QUALITY ASSESSMENT
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  if (scores) {
+    lines.push(`## 🎯 Quality Assessment`);
+    lines.push(``);
+
+    // Overall Score Highlight
+    lines.push(`<div align="center">`);
+    lines.push(``);
+    lines.push(`### Overall Score`);
+    lines.push(``);
+    lines.push(`# ${getScoreEmoji(scores.overall)} ${scores.overall}/100`);
+    lines.push(`**${getScoreRating(scores.overall).toUpperCase()}**`);
+    lines.push(``);
+    lines.push(`\`${getScoreBar(scores.overall, 20)}\``);
+    lines.push(``);
+    lines.push(`</div>`);
+    lines.push(``);
+
+    // Detailed Scores Table
+    lines.push(`### Detailed Breakdown`);
+    lines.push(``);
+    lines.push(`| Metric | Score | Progress | Rating |`);
+    lines.push(`|:-------|:-----:|:---------|:-------|`);
+
+    const scoreMetrics = [
+      { name: "🔧 Code Quality", score: scores.codeQuality },
+      { name: "📚 Documentation", score: scores.documentation },
+      { name: "🔒 Security", score: scores.security },
+      { name: "🔄 Maintainability", score: scores.maintainability },
+      { name: "🧪 Test Coverage", score: scores.testCoverage },
+      { name: "📦 Dependencies", score: scores.dependencies },
+    ];
+
+    for (const metric of scoreMetrics) {
+      const bar = getScoreBar(metric.score, 10);
+      const rating = getScoreRating(metric.score);
+      const emoji = getScoreEmoji(metric.score);
+      lines.push(
+        `| ${metric.name} | **${metric.score}**/100 | \`${bar}\` | ${emoji} ${rating} |`
+      );
+    }
+    lines.push(``);
+
+    // Score Legend
+    lines.push(`<details>`);
+    lines.push(`<summary><b>📊 Score Legend</b></summary>`);
+    lines.push(``);
+    lines.push(`| Range | Rating | Description |`);
+    lines.push(`|:------|:-------|:------------|`);
     lines.push(
-      `| **Overall** | ${result.scores.overall}/100 | ${getScoreRating(
-        result.scores.overall
-      )} |`
+      `| 90-100 | 🏆 Excellent | Outstanding quality, best practices followed |`
     );
     lines.push(
-      `| Code Quality | ${result.scores.codeQuality}/100 | ${getScoreRating(
-        result.scores.codeQuality
-      )} |`
+      `| 80-89 | 🟢 Very Good | High quality with minor improvements possible |`
     );
     lines.push(
-      `| Documentation | ${result.scores.documentation}/100 | ${getScoreRating(
-        result.scores.documentation
-      )} |`
+      `| 70-79 | 🟡 Good | Solid quality, some areas need attention |`
     );
     lines.push(
-      `| Security | ${result.scores.security}/100 | ${getScoreRating(
-        result.scores.security
-      )} |`
+      `| 60-69 | 🟠 Fair | Acceptable but significant improvements needed |`
     );
     lines.push(
-      `| Maintainability | ${
-        result.scores.maintainability
-      }/100 | ${getScoreRating(result.scores.maintainability)} |`
+      `| 40-59 | 🔴 Poor | Below average, requires substantial work |`
     );
     lines.push(
-      `| Test Coverage | ${result.scores.testCoverage}/100 | ${getScoreRating(
-        result.scores.testCoverage
-      )} |`
+      `| 0-39 | ⚠️ Critical | Serious issues that need immediate attention |`
     );
-    lines.push(
-      `| Dependencies | ${result.scores.dependencies}/100 | ${getScoreRating(
-        result.scores.dependencies
-      )} |`
-    );
-    lines.push("");
+    lines.push(``);
+    lines.push(`</details>`);
+    lines.push(``);
+    lines.push(`---`);
+    lines.push(``);
   }
 
-  // Tech Stack
-  if (result.techStack && result.techStack.length > 0) {
-    lines.push("## Tech Stack");
-    lines.push("");
-    lines.push(result.techStack.map((t) => `\`${t}\``).join(" • "));
-    lines.push("");
+  // ═══════════════════════════════════════════════════════════════════════════
+  // TECHNOLOGY STACK
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  if (techStack && techStack.length > 0) {
+    lines.push(`## 🛠️ Technology Stack`);
+    lines.push(``);
+    lines.push(`<div align="center">`);
+    lines.push(``);
+
+    // Create tech badges
+    const techBadges = techStack.map((tech) => {
+      const encoded = encodeURIComponent(tech);
+      return `![${tech}](https://img.shields.io/badge/${encoded}-333?style=for-the-badge)`;
+    });
+    lines.push(techBadges.join(" "));
+    lines.push(``);
+    lines.push(`</div>`);
+    lines.push(``);
+
+    // Tech list table
+    if (techStack.length > 5) {
+      lines.push(`<details>`);
+      lines.push(
+        `<summary><b>View All Technologies (${techStack.length})</b></summary>`
+      );
+      lines.push(``);
+      lines.push(`| # | Technology |`);
+      lines.push(`|:--|:-----------|`);
+      techStack.forEach((tech, idx) => {
+        lines.push(`| ${idx + 1} | ${tech} |`);
+      });
+      lines.push(``);
+      lines.push(`</details>`);
+      lines.push(``);
+    }
+
+    lines.push(`---`);
+    lines.push(``);
   }
 
-  // How to Run
-  if (result.howToRun && result.howToRun.length > 0) {
-    lines.push("## Getting Started");
-    lines.push("");
-    lines.push("```bash");
-    for (const cmd of result.howToRun) {
+  // ═══════════════════════════════════════════════════════════════════════════
+  // PROJECT STRUCTURE
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  if (keyFolders && keyFolders.length > 0) {
+    lines.push(`## 📁 Project Structure`);
+    lines.push(``);
+    lines.push(`\`\`\`text`);
+    lines.push(`${metadata.name}/`);
+    for (const folder of keyFolders) {
+      lines.push(`├── ${folder.name}/`);
+      lines.push(`│   └── ${folder.description}`);
+    }
+    lines.push(`└── ...`);
+    lines.push(`\`\`\``);
+    lines.push(``);
+
+    // Detailed folder table
+    lines.push(`### Key Directories`);
+    lines.push(``);
+    lines.push(`| Directory | Purpose |`);
+    lines.push(`|:----------|:--------|`);
+    for (const folder of keyFolders) {
+      lines.push(`| \`${folder.name}/\` | ${folder.description} |`);
+    }
+    lines.push(``);
+    lines.push(`---`);
+    lines.push(``);
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // GETTING STARTED
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  if (howToRun && howToRun.length > 0) {
+    lines.push(`## 🚀 Getting Started`);
+    lines.push(``);
+    lines.push(`Follow these steps to set up and run the project locally:`);
+    lines.push(``);
+
+    // Prerequisites
+    lines.push(`### Prerequisites`);
+    lines.push(``);
+    lines.push(`- Git installed on your system`);
+    if (
+      techStack?.includes("Node.js") ||
+      techStack?.includes("npm") ||
+      techStack?.includes("JavaScript") ||
+      techStack?.includes("TypeScript")
+    ) {
+      lines.push(`- Node.js (LTS version recommended)`);
+      lines.push(`- npm or yarn package manager`);
+    }
+    if (techStack?.includes("Python")) {
+      lines.push(`- Python 3.x installed`);
+    }
+    if (techStack?.includes("Docker")) {
+      lines.push(`- Docker and Docker Compose`);
+    }
+    lines.push(``);
+
+    // Installation steps
+    lines.push(`### Installation`);
+    lines.push(``);
+
+    howToRun.forEach((cmd, idx) => {
+      lines.push(
+        `**Step ${idx + 1}:** ${
+          cmd.includes("clone")
+            ? "Clone the repository"
+            : cmd.includes("install")
+            ? "Install dependencies"
+            : cmd.includes("run") || cmd.includes("start")
+            ? "Start the application"
+            : "Execute command"
+        }`
+      );
+      lines.push(``);
+      lines.push(`\`\`\`bash`);
+      lines.push(cmd);
+      lines.push(`\`\`\``);
+      lines.push(``);
+    });
+
+    // Quick start code block
+    lines.push(`<details>`);
+    lines.push(`<summary><b>📋 Quick Copy - All Commands</b></summary>`);
+    lines.push(``);
+    lines.push(`\`\`\`bash`);
+    lines.push(`# Complete setup in one go`);
+    for (const cmd of howToRun) {
       lines.push(cmd);
     }
-    lines.push("```");
-    lines.push("");
+    lines.push(`\`\`\``);
+    lines.push(``);
+    lines.push(`</details>`);
+    lines.push(``);
+    lines.push(`---`);
+    lines.push(``);
   }
 
-  // Key Folders
-  if (result.keyFolders && result.keyFolders.length > 0) {
-    lines.push("## Project Structure");
-    lines.push("");
-    for (const folder of result.keyFolders) {
-      lines.push(`- **\`${folder.name}\`**: ${folder.description}`);
-    }
-    lines.push("");
-  }
+  // ═══════════════════════════════════════════════════════════════════════════
+  // ANALYSIS INSIGHTS
+  // ═══════════════════════════════════════════════════════════════════════════
 
-  // Insights
-  if (result.insights && result.insights.length > 0) {
-    lines.push("## Key Findings");
-    lines.push("");
+  if (insights && insights.length > 0) {
+    lines.push(`## 🔍 Analysis Insights`);
+    lines.push(``);
 
-    const grouped = {
-      strength: {
-        title: "Strengths",
-        items: result.insights.filter((i) => i.type === "strength"),
-      },
-      weakness: {
-        title: "Areas for Improvement",
-        items: result.insights.filter((i) => i.type === "weakness"),
-      },
-      suggestion: {
-        title: "Suggestions",
-        items: result.insights.filter((i) => i.type === "suggestion"),
-      },
-      warning: {
-        title: "Warnings",
-        items: result.insights.filter((i) => i.type === "warning"),
-      },
-    };
+    const strengths = insights.filter((i) => i.type === "strength");
+    const weaknesses = insights.filter((i) => i.type === "weakness");
+    const suggestions = insights.filter((i) => i.type === "suggestion");
+    const warnings = insights.filter((i) => i.type === "warning");
 
-    for (const [, group] of Object.entries(grouped)) {
-      if (group.items.length > 0) {
-        lines.push(`### ${group.title}`);
-        lines.push("");
-        for (const insight of group.items) {
-          lines.push(`- **${insight.title}**: ${insight.description}`);
-        }
-        lines.push("");
+    // Summary cards
+    lines.push(`<table>`);
+    lines.push(`<tr>`);
+    lines.push(
+      `<td align="center">✅<br><b>${strengths.length}</b><br>Strengths</td>`
+    );
+    lines.push(
+      `<td align="center">⚠️<br><b>${weaknesses.length}</b><br>Weaknesses</td>`
+    );
+    lines.push(
+      `<td align="center">💡<br><b>${suggestions.length}</b><br>Suggestions</td>`
+    );
+    lines.push(
+      `<td align="center">🚨<br><b>${warnings.length}</b><br>Warnings</td>`
+    );
+    lines.push(`</tr>`);
+    lines.push(`</table>`);
+    lines.push(``);
+
+    // Strengths
+    if (strengths.length > 0) {
+      lines.push(`### ✅ Strengths`);
+      lines.push(``);
+      lines.push(`> What this repository does well`);
+      lines.push(``);
+      for (const insight of strengths) {
+        lines.push(`<details>`);
+        lines.push(`<summary><b>${insight.title}</b></summary>`);
+        lines.push(``);
+        lines.push(insight.description);
+        lines.push(``);
+        lines.push(`</details>`);
+        lines.push(``);
       }
     }
+
+    // Weaknesses
+    if (weaknesses.length > 0) {
+      lines.push(`### ⚠️ Areas for Improvement`);
+      lines.push(``);
+      lines.push(`> Issues that should be addressed`);
+      lines.push(``);
+      lines.push(`| Issue | Description |`);
+      lines.push(`|:------|:------------|`);
+      for (const insight of weaknesses) {
+        lines.push(`| **${insight.title}** | ${insight.description} |`);
+      }
+      lines.push(``);
+    }
+
+    // Suggestions
+    if (suggestions.length > 0) {
+      lines.push(`### 💡 Suggestions`);
+      lines.push(``);
+      lines.push(`> Recommendations for enhancement`);
+      lines.push(``);
+      suggestions.forEach((insight, idx) => {
+        lines.push(`${idx + 1}. **${insight.title}**`);
+        lines.push(`   - ${insight.description}`);
+        lines.push(``);
+      });
+    }
+
+    // Warnings
+    if (warnings.length > 0) {
+      lines.push(`### 🚨 Warnings`);
+      lines.push(``);
+      lines.push(`> Critical issues requiring attention`);
+      lines.push(``);
+      lines.push(`> [!WARNING]`);
+      for (const insight of warnings) {
+        lines.push(`> **${insight.title}:** ${insight.description}`);
+      }
+      lines.push(``);
+    }
+
+    lines.push(`---`);
+    lines.push(``);
   }
 
-  // Footer
-  lines.push("---");
+  // ═══════════════════════════════════════════════════════════════════════════
+  // REFACTORING RECOMMENDATIONS
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  if (refactors && refactors.length > 0) {
+    lines.push(`## 🔨 Refactoring Recommendations`);
+    lines.push(``);
+    lines.push(`Prioritized list of recommended code improvements:`);
+    lines.push(``);
+
+    refactors.forEach((refactor, idx) => {
+      lines.push(`### ${idx + 1}. ${refactor.title}`);
+      lines.push(``);
+      lines.push(`| Attribute | Value |`);
+      lines.push(`|:----------|:------|`);
+      lines.push(`| **Impact** | ${getImpactBadge(refactor.impact)} |`);
+      lines.push(`| **Effort** | ${getEffortBadge(refactor.effort)} |`);
+      lines.push(``);
+      lines.push(`**Description:**`);
+      lines.push(refactor.description);
+      lines.push(``);
+
+      if (refactor.files && refactor.files.length > 0) {
+        lines.push(`**Affected Files:**`);
+        lines.push(``);
+        lines.push(`\`\`\`text`);
+        for (const file of refactor.files) {
+          lines.push(`📄 ${file}`);
+        }
+        lines.push(`\`\`\``);
+        lines.push(``);
+      }
+
+      if (refactor.codeExample) {
+        lines.push(`<details>`);
+        lines.push(`<summary><b>💻 Code Example</b></summary>`);
+        lines.push(``);
+        lines.push(`\`\`\`${metadata.language?.toLowerCase() || "javascript"}`);
+        lines.push(refactor.codeExample);
+        lines.push(`\`\`\``);
+        lines.push(``);
+        lines.push(`</details>`);
+        lines.push(``);
+      }
+    });
+
+    // Priority Matrix
+    lines.push(`### 📊 Priority Matrix`);
+    lines.push(``);
+    lines.push(`| Refactor | Impact | Effort | Priority |`);
+    lines.push(`|:---------|:------:|:------:|:--------:|`);
+    for (const refactor of refactors) {
+      const impactScore =
+        refactor.impact.toLowerCase() === "high"
+          ? 3
+          : refactor.impact.toLowerCase() === "medium"
+          ? 2
+          : 1;
+      const effortScore =
+        refactor.effort.toLowerCase() === "low"
+          ? 3
+          : refactor.effort.toLowerCase() === "medium"
+          ? 2
+          : 1;
+      const priority =
+        impactScore + effortScore >= 5
+          ? "🔴 High"
+          : impactScore + effortScore >= 3
+          ? "🟡 Medium"
+          : "🟢 Low";
+      lines.push(
+        `| ${refactor.title} | ${getImpactBadge(
+          refactor.impact
+        )} | ${getEffortBadge(refactor.effort)} | ${priority} |`
+      );
+    }
+    lines.push(``);
+    lines.push(`---`);
+    lines.push(``);
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // ANALYSIS METADATA
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  lines.push(`## 📋 Analysis Metadata`);
+  lines.push(``);
+  lines.push(`| Property | Value |`);
+  lines.push(`|:---------|:------|`);
   lines.push(
-    `*Generated by [RepoGist](${SITE_URL}) on ${new Date().toLocaleDateString()}*`
+    `| **Repository** | [${metadata.fullName}](https://github.com/${metadata.fullName}) |`
   );
+  lines.push(
+    `| **Owner** | [@${metadata.owner.login}](https://github.com/${metadata.owner.login}) |`
+  );
+  if (result.branch) {
+    lines.push(`| **Branch Analyzed** | \`${result.branch}\` |`);
+  }
+  lines.push(
+    `| **Analysis Date** | ${new Date().toLocaleDateString("en-US", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    })} |`
+  );
+  lines.push(
+    `| **Analysis Time** | ${new Date().toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+      timeZoneName: "short",
+    })} |`
+  );
+  lines.push(``);
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // FOOTER
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  lines.push(`---`);
+  lines.push(``);
+  lines.push(`<div align="center">`);
+  lines.push(``);
+  lines.push(`**🔍 Powered by [RepoGist](${SITE_URL})**`);
+  lines.push(``);
+  lines.push(`*AI-powered GitHub repository analysis*`);
+  lines.push(``);
+  lines.push(
+    `[![Analyze Another Repo](https://img.shields.io/badge/Analyze_Another_Repo-Visit_RepoGist-blue?style=for-the-badge)](${SITE_URL})`
+  );
+  lines.push(``);
+  lines.push(`</div>`);
 
   return lines.join("\n");
 }
@@ -591,3 +1055,5 @@ export function redirectToTwitter(data: ShareCardData): void {
 export function redirectToLinkedIn(data: ShareCardData): void {
   window.open(generateLinkedInShareUrl(data), "_blank", "noopener,noreferrer");
 }
+
+// fix this error

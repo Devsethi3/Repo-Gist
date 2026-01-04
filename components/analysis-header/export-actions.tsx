@@ -152,9 +152,9 @@ export function ExportActions({ result, className }: ExportActionsProps) {
                       icon={Tick01Icon}
                       className="w-4 h-4 text-primary shrink-0"
                     />
-                    <span className="text-xs text-primary truncate">
+                    {/* <span className="text-xs text-primary truncate">
                       Copied!
-                    </span>
+                    </span> */}
                   </motion.div>
                 ) : (
                   <motion.div

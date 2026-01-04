@@ -5,26 +5,23 @@ import { useSearchParams } from "next/navigation";
 import { Footer } from "@/components/footer";
 import { HeroHeader } from "@/components/header";
 import { RepoAnalyzer } from "@/components/repo-analyzer";
-import { RecentAnalyses } from "@/components/recent-analyses";
 import { useAnalysis } from "@/hooks/use-analysis";
 
 function HomeContent() {
   const searchParams = useSearchParams();
-  const { analyze, isIdle } = useAnalysis();
+  const { analyze } = useAnalysis();
 
-  // Handle repo query parameter from shared links
   useEffect(() => {
     const repoParam = searchParams.get("repo");
     const branchParam = searchParams.get("branch");
 
     if (repoParam) {
-      // Auto-trigger analysis when coming from a share link
       analyze(repoParam, branchParam || undefined);
     }
   }, [searchParams, analyze]);
-  
+
   return (
-    <div className="min-h-screen w-full relative jetbrains-mono">
+    <div className="w-full relative jetbrains-mono">
       <div className="fixed inset-0 w-full h-full pointer-events-none -z-10">
         <div className="fixed inset-0 -z-10">
           {/* Base gradient */}
@@ -47,7 +44,7 @@ function HomeContent() {
       </div>
 
       {/* Main Content */}
-      <main className="min-h-screen flex flex-col relative">
+      <main className="flex flex-col relative">
         {/* Header */}
         <div className="pb-24">
           <HeroHeader />
@@ -95,13 +92,6 @@ function HomeContent() {
             <div className="relative pb-16 sm:pb-20 lg:pb-24">
               <div className="relative mx-auto max-w-4xl">
                 <RepoAnalyzer />
-
-                {/* Recent Analyses - Show only when idle */}
-                {isIdle && (
-                  <div className="mt-8">
-                    <RecentAnalyses onSelect={analyze} />
-                  </div>
-                )}
               </div>
             </div>
           </div>

@@ -76,6 +76,7 @@ export interface Refactor {
   category: string;
   files: string[];
   suggestedCode?: string;
+  codeExample?: string;
 }
 
 export interface Automation {

@@ -12,6 +12,7 @@ import { RefactorsPanel } from "@/components/refactors-panel";
 import { AutomationsPanel } from "@/components/automations-panel";
 import { AnalysisHeader } from "@/components/analysis-header";
 import { LoadingSkeleton } from "@/components/loading-skeleton";
+import { RecentAnalyses } from "@/components/recent-analyses";
 import { useAnalysis } from "@/hooks/use-analysis";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -34,6 +35,7 @@ import { fadeIn, slideUp } from "./animations";
 import { SectionHeader } from "./section-header";
 import { TabTriggerItem } from "./tab-trigger-item";
 import { EmptyState } from "./empty-state";
+import Testimonials from "../testimonial/testimonial";
 
 export function RepoAnalyzer() {
   const {
@@ -50,6 +52,14 @@ export function RepoAnalyzer() {
     isCached,
     currentBranch,
   } = useAnalysis();
+
+  const handleReset = () => {
+    reset();
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  };
 
   return (
     <div className="w-full">
@@ -86,7 +96,7 @@ export function RepoAnalyzer() {
                         "Something went wrong while analyzing the repository."}
                     </p>
                     <Button
-                      onClick={reset}
+                      onClick={handleReset}
                       variant="outline"
                       className="border-border hover:bg-muted"
                     >
@@ -356,7 +366,7 @@ export function RepoAnalyzer() {
                 className="w-full flex justify-center pt-4 pb-8"
               >
                 <Button
-                  onClick={reset}
+                  onClick={handleReset}
                   variant="outline"
                   size="lg"
                   className={cn(
@@ -382,15 +392,20 @@ export function RepoAnalyzer() {
             </motion.div>
           )}
 
-          {/* Idle State */}
+          {/* Idle State - Recent Analyses + Testimonials */}
           {isIdle && (
             <motion.div
               key="idle"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
+              className="space-y-8"
             >
-              {/* <About /> */}
+              {/* Recent Analyses */}
+              <RecentAnalyses onSelect={analyze} />
+
+              {/* Testimonials */}
+              <Testimonials />
             </motion.div>
           )}
         </AnimatePresence>

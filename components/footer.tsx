@@ -7,14 +7,11 @@ import RepoGistLogo from "./icons/repogist-logo";
 export function Footer() {
   return (
     <footer className="relative z-10 bg-background w-full overflow-hidden">
-      {/* Gradient top border */}
       <div className="h-px bg-linear-to-r from-transparent via-primary/50 to-transparent" />
 
       <div className="bg-background/40 backdrop-blur-sm">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Main Content: Stack on mobile, Row on desktop */}
           <div className="flex flex-col md:flex-row items-start justify-between gap-10 py-10 md:py-12">
-            {/* Brand Column */}
             <div className="space-y-4 max-w-xs">
               <Link href="/" className="flex items-center gap-2.5 group w-fit">
                 <div className="relative">
@@ -26,9 +23,9 @@ export function Footer() {
                 </h2>
               </Link>
               <p className="text-sm text-muted-foreground jetbrains-mono leading-relaxed">
-                AI-powered repository analysis.
+                See what matters in your repositories,
                 <br />
-                Understand code in seconds.
+                powered by smart AI analysis.
               </p>
             </div>
 
@@ -40,10 +37,13 @@ export function Footer() {
                   Connect
                 </h3>
                 <div className="flex items-center gap-2">
-                  <SocialLink href="https://github.com" label="GitHub">
+                  <SocialLink
+                    href="https://github.com/Devsethi3"
+                    label="GitHub"
+                  >
                     <GithubIcon className="size-5" />
                   </SocialLink>
-                  <SocialLink href="https://twitter.com" label="Twitter">
+                  <SocialLink href="https://x.com/imsethidev" label="Twitter">
                     <TwitterIcon className="size-5" />
                   </SocialLink>
                 </div>

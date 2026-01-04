@@ -6,9 +6,6 @@ interface RGB {
   b: number;
 }
 
-/**
- * Generate a minimal, professional PDF report with Caffeine theme
- */
 export async function generatePDFReport(result: AnalysisResult): Promise<Blob> {
   const { jsPDF } = await import("jspdf");
 
@@ -43,7 +40,6 @@ export async function generatePDFReport(result: AnalysisResult): Promise<Blob> {
     danger: { r: 168, g: 82, b: 75 } as RGB,
   };
 
-  // Helper Functions
   const setColor = (color: RGB, type: "fill" | "text" | "draw" = "text") => {
     if (type === "fill") doc.setFillColor(color.r, color.g, color.b);
     else if (type === "draw") doc.setDrawColor(color.r, color.g, color.b);
@@ -77,13 +73,11 @@ export async function generatePDFReport(result: AnalysisResult): Promise<Blob> {
     return num.toString();
   };
 
-  // Simple dot icon (bullet point)
   const drawDot = (x: number, y: number, color: RGB) => {
     setColor(color, "fill");
     doc.circle(x, y, 0.8, "F");
   };
 
-  // Draw a single stat item with dot indicator
   const drawStatItem = (
     x: number,
     y: number,
@@ -109,7 +103,6 @@ export async function generatePDFReport(result: AnalysisResult): Promise<Blob> {
     return totalWidth;
   };
 
-  // Draw section divider
   const drawDivider = () => {
     setColor(colors.sand, "draw");
     doc.setLineWidth(0.3);
@@ -117,7 +110,6 @@ export async function generatePDFReport(result: AnalysisResult): Promise<Blob> {
     yPosition += 6;
   };
 
-  // Draw section header
   const drawSectionHeader = (title: string) => {
     addNewPageIfNeeded(25);
     yPosition += 4;
@@ -139,7 +131,6 @@ export async function generatePDFReport(result: AnalysisResult): Promise<Blob> {
     yPosition += 10;
   };
 
-  // Draw table
   const drawTable = (
     headers: string[],
     rows: string[][],
@@ -151,7 +142,6 @@ export async function generatePDFReport(result: AnalysisResult): Promise<Blob> {
 
     addNewPageIfNeeded(headerHeight + Math.min(rows.length, 3) * rowHeight + 5);
 
-    // Header
     setColor(colors.cream, "fill");
     doc.rect(margin, yPosition, contentWidth, headerHeight, "F");
 
@@ -176,7 +166,6 @@ export async function generatePDFReport(result: AnalysisResult): Promise<Blob> {
 
     yPosition += headerHeight;
 
-    // Rows
     rows.forEach((row) => {
       if (addNewPageIfNeeded(rowHeight)) {
         setColor(colors.cream, "fill");
@@ -236,7 +225,6 @@ export async function generatePDFReport(result: AnalysisResult): Promise<Blob> {
     yPosition += 6;
   };
 
-  // Draw score circle
   const drawScoreCircle = (
     x: number,
     y: number,
@@ -266,20 +254,17 @@ export async function generatePDFReport(result: AnalysisResult): Promise<Blob> {
       doc.line(x1, y1, x2, y2);
     }
 
-    // Score number
     doc.setFontSize(16);
     doc.setFont("helvetica", "bold");
     setColor(colors.espresso);
     doc.text(score.toString(), x, y + 2, { align: "center" });
 
-    // Label
     doc.setFontSize(7);
     doc.setFont("helvetica", "normal");
     setColor(colors.stone);
     doc.text(label, x, y + radius + 5, { align: "center" });
   };
 
-  // Draw score bar
   const drawScoreBar = (
     x: number,
     y: number,
@@ -309,7 +294,6 @@ export async function generatePDFReport(result: AnalysisResult): Promise<Blob> {
     return y + 12;
   };
 
-  // Draw multi-line text block (no truncation)
   const drawTextBlock = (
     text: string,
     x: number,
@@ -327,7 +311,6 @@ export async function generatePDFReport(result: AnalysisResult): Promise<Blob> {
     lines.forEach((line: string, i: number) => {
       const currentY = startY + i * lineHeight;
 
-      // Check if we need a new page
       if (currentY > pageHeight - 25) {
         doc.addPage();
         addPageBackground();
@@ -340,11 +323,9 @@ export async function generatePDFReport(result: AnalysisResult): Promise<Blob> {
     return lines.length * lineHeight;
   };
 
-  // ==================== BUILD PDF ====================
 
   addPageBackground();
 
-  // === HEADER ===
   setColor(colors.caramel, "fill");
   doc.rect(margin, yPosition, 3, 18, "F");
 
@@ -360,12 +341,10 @@ export async function generatePDFReport(result: AnalysisResult): Promise<Blob> {
 
   yPosition += 24;
 
-  // === STATS ROW - Simple dot indicators ===
   const statsY = yPosition;
   let statsX = margin;
   const statGap = 16;
 
-  // Stars
   statsX +=
     drawStatItem(
       statsX,
@@ -375,7 +354,6 @@ export async function generatePDFReport(result: AnalysisResult): Promise<Blob> {
       colors.caramel
     ) + statGap;
 
-  // Forks
   statsX +=
     drawStatItem(
       statsX,
@@ -385,7 +363,6 @@ export async function generatePDFReport(result: AnalysisResult): Promise<Blob> {
       colors.mocha
     ) + statGap;
 
-  // Language
   if (result.metadata.language) {
     statsX +=
       drawStatItem(
@@ -397,7 +374,6 @@ export async function generatePDFReport(result: AnalysisResult): Promise<Blob> {
       ) + statGap;
   }
 
-  // License
   if (result.metadata.license) {
     drawStatItem(statsX, statsY, "License", result.metadata.license, colors.stone);
   }
@@ -405,7 +381,6 @@ export async function generatePDFReport(result: AnalysisResult): Promise<Blob> {
   yPosition += 10;
   drawDivider();
 
-  // === SCORE OVERVIEW ===
   const scoreY = yPosition;
 
   drawScoreCircle(
@@ -438,7 +413,6 @@ export async function generatePDFReport(result: AnalysisResult): Promise<Blob> {
 
   yPosition = scoreY + 42;
 
-  // === SUMMARY ===
   if (result.summary) {
     drawSectionHeader("Summary");
 
@@ -454,7 +428,6 @@ export async function generatePDFReport(result: AnalysisResult): Promise<Blob> {
     yPosition += summaryHeight + 6;
   }
 
-  // === PURPOSE (Full text, no truncation) ===
   if (result.whatItDoes) {
     addNewPageIfNeeded(20);
 
@@ -477,7 +450,6 @@ export async function generatePDFReport(result: AnalysisResult): Promise<Blob> {
     yPosition += purposeHeight + 6;
   }
 
-  // === TARGET AUDIENCE (if exists) ===
   if (result.targetAudience) {
     addNewPageIfNeeded(20);
 
@@ -500,7 +472,6 @@ export async function generatePDFReport(result: AnalysisResult): Promise<Blob> {
     yPosition += audienceHeight + 6;
   }
 
-  // === TECH STACK ===
   if (result.techStack && result.techStack.length > 0) {
     addNewPageIfNeeded(15);
 
@@ -525,7 +496,6 @@ export async function generatePDFReport(result: AnalysisResult): Promise<Blob> {
       const textWidth = doc.getTextWidth(tech);
       const pillWidth = textWidth + pillPadding * 2;
 
-      // Wrap to next line if needed
       if (techX + pillWidth > margin + contentWidth) {
         techX = margin;
         currentRow++;
@@ -617,7 +587,6 @@ export async function generatePDFReport(result: AnalysisResult): Promise<Blob> {
     ]);
   }
 
-  // === REFACTORING ===
   if (result.refactors && result.refactors.length > 0) {
     drawSectionHeader("Refactoring");
 
@@ -636,7 +605,6 @@ export async function generatePDFReport(result: AnalysisResult): Promise<Blob> {
     ]);
   }
 
-  // === AUTOMATIONS ===
   if (result.automations && result.automations.length > 0) {
     drawSectionHeader("Automations");
 
@@ -651,7 +619,6 @@ export async function generatePDFReport(result: AnalysisResult): Promise<Blob> {
     drawTable(["Type", "Suggestion"], autoRows, [30, contentWidth - 30]);
   }
 
-  // === FOOTER ===
   const totalPages = doc.getNumberOfPages();
 
   for (let i = 1; i <= totalPages; i++) {
@@ -686,9 +653,6 @@ export async function generatePDFReport(result: AnalysisResult): Promise<Blob> {
   return doc.output("blob");
 }
 
-/**
- * Download the PDF report
- */
 export async function downloadPDFReport(
   result: AnalysisResult,
   filename?: string
@@ -712,9 +676,6 @@ export async function downloadPDFReport(
   }
 }
 
-/**
- * Open PDF in new tab for preview
- */
 export async function previewPDFReport(
   result: AnalysisResult
 ): Promise<boolean> {
