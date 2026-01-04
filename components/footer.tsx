@@ -25,7 +25,7 @@ export function Footer() {
               <p className="text-sm text-muted-foreground jetbrains-mono leading-relaxed">
                 See what matters in your repositories,
                 <br />
-                powered by smart AI analysis.
+                with clear, actionable insights.
               </p>
             </div>
 
