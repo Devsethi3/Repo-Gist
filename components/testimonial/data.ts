@@ -169,4 +169,26 @@ export const tweets: Tweet[] = [
       isVerified: false,
     },
   },
+  {
+    id: "16",
+    content: "Looks cool brother 🙌🏻Great work💪🏻",
+    user: {
+      name: "Shabaz",
+      username: "Shabaz1406",
+      avatar:
+        "https://pbs.twimg.com/profile_images/1997651420707975168/KWTUmX42_400x400.jpg",
+      isVerified: true,
+    },
+  },
+  {
+    id: "17",
+    content: "Hey bro. This is really helpful tool. Great job",
+    user: {
+      name: "Sudharsan",
+      username: "sudharsandevv",
+      avatar:
+        "https://pbs.twimg.com/profile_images/2007039899778809856/2fhQzbq8_400x400.jpg",
+      isVerified: false,
+    },
+  },
 ];

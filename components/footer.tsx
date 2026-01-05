@@ -57,20 +57,6 @@ export function Footer() {
               <p className="text-xs text-muted-foreground jetbrains-mono text-center sm:text-left">
                 © {new Date().getFullYear()} RepoGist. All rights reserved.
               </p>
-              <div className="flex items-center gap-6 text-xs text-muted-foreground jetbrains-mono">
-                <Link
-                  href="/privacy"
-                  className="hover:text-foreground transition-colors"
-                >
-                  Privacy
-                </Link>
-                <Link
-                  href="/terms"
-                  className="hover:text-foreground transition-colors"
-                >
-                  Terms
-                </Link>
-              </div>
             </div>
           </div>
         </div>
