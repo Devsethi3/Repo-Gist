@@ -3,24 +3,57 @@ import { z } from "zod";
 const githubUrlPattern =
   /^https?:\/\/(www\.)?github\.com\/[\w.-]+\/[\w.-]+\/?.*$/;
 
-export const githubUrlSchema = z
-  .string()
-  .min(1, "GitHub URL is required")
-  .regex(githubUrlPattern, "Please enter a valid GitHub repository URL")
-  .transform((url) => {
-    const parsed = new URL(url);
+const shorthandPattern = /^[\w.-]+\/[\w.-]+$/;
+
+function isValidGitHubInput(input: string): boolean {
+  const trimmed = input.trim();
+  return githubUrlPattern.test(trimmed) || shorthandPattern.test(trimmed);
+}
+
+function normalizeToGitHubUrl(input: string): string {
+  const trimmed = input.trim();
+
+  if (githubUrlPattern.test(trimmed)) {
+    const parsed = new URL(trimmed);
     const pathParts = parsed.pathname.split("/").filter(Boolean);
     if (pathParts.length >= 2) {
       return `https://github.com/${pathParts[0]}/${pathParts[1]}`;
     }
-    return url.replace(/\/$/, "");
-  });
+    return trimmed.replace(/\/$/, "");
+  }
+
+  if (shorthandPattern.test(trimmed)) {
+    const [owner, repo] = trimmed.split("/");
+    return `https://github.com/${owner}/${repo.replace(/\.git$/, "")}`;
+  }
+
+  return trimmed;
+}
+
+export const githubUrlSchema = z
+  .string()
+  .min(1, "GitHub URL or owner/repo is required")
+  .refine(isValidGitHubInput, {
+    message:
+      "Please enter a valid GitHub URL or owner/repo (e.g., facebook/react)",
+  })
+  .transform(normalizeToGitHubUrl);
 
 export function parseGitHubUrl(
-  url: string
+  input: string
 ): { owner: string; repo: string } | null {
+  const trimmed = input.trim();
+
+  if (shorthandPattern.test(trimmed)) {
+    const [owner, repo] = trimmed.split("/");
+    return {
+      owner,
+      repo: repo.replace(/\.git$/, ""),
+    };
+  }
+
   try {
-    const parsed = new URL(url);
+    const parsed = new URL(trimmed);
     const pathParts = parsed.pathname.split("/").filter(Boolean);
     if (pathParts.length >= 2) {
       return {
@@ -34,21 +67,22 @@ export function parseGitHubUrl(
   return null;
 }
 
-export function validateGitHubUrl(url: string): {
+export function validateGitHubUrl(input: string): {
   valid: boolean;
   error?: string;
   parsed?: { owner: string; repo: string };
+  normalizedUrl?: string;
 } {
-  const result = githubUrlSchema.safeParse(url);
+  const result = githubUrlSchema.safeParse(input);
 
   if (!result.success) {
     return {
       valid: false,
-      error: result.error.issues[0]?.message || "Invalid URL",
+      error: result.error.issues[0]?.message || "Invalid input",
     };
   }
 
-  const parsed = parseGitHubUrl(result.data);
+  const parsed = parseGitHubUrl(input);
 
   if (!parsed) {
     return {
@@ -57,5 +91,9 @@ export function validateGitHubUrl(url: string): {
     };
   }
 
-  return { valid: true, parsed };
+  return {
+    valid: true,
+    parsed,
+    normalizedUrl: result.data,
+  };
 }

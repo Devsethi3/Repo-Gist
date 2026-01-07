@@ -37,8 +37,7 @@ export function UrlInput({ onAnalyze, isLoading }: UrlInputProps) {
       }
 
       setError(null);
-      // Pass undefined for branch - will use default branch
-      onAnalyze(url, undefined);
+      onAnalyze(validation.normalizedUrl || url, undefined);
     },
     [url, onAnalyze]
   );
@@ -76,8 +75,8 @@ export function UrlInput({ onAnalyze, isLoading }: UrlInputProps) {
 
           <div className="flex-1 flex items-center gap-2">
             <Input
-              type="url"
-              placeholder="github.com/owner/repository"
+              type="text"
+              placeholder="owner/repo or github.com/owner/repo"
               value={url}
               onChange={handleChange}
               onFocus={() => setIsFocused(true)}
@@ -148,7 +147,7 @@ export function UrlInput({ onAnalyze, isLoading }: UrlInputProps) {
         </AnimatePresence>
 
         <p className="text-xs text-muted-foreground/50 text-center px-4">
-          Paste a GitHub repository URL to analyze its structure and code
+          Enter a GitHub repository (e.g., facebook/react or full URL)
         </p>
       </form>
     </motion.div>
