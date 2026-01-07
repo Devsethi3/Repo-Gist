@@ -188,7 +188,7 @@ export const tweets: Tweet[] = [
       username: "sudharsandevv",
       avatar:
         "https://pbs.twimg.com/profile_images/2007039899778809856/2fhQzbq8_400x400.jpg",
-      isVerified: false,
+      isVerified: true,
     },
   },
 ];

@@ -50,10 +50,41 @@ function HomeContent() {
           <HeroHeader />
         </div>
 
+        <div className="flex justify-center">
+          <div className="relative rounded-xl border bg-background/60 px-4 py-3 backdrop-blur-sm transition-colors">
+            <p className="mb-2 text-center text-xs text-muted-foreground">
+              Featured on Product Hunt
+            </p>
+            <a
+              href="https://www.producthunt.com/products/repogist?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-repogist"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block"
+            >
+              <img
+                alt="RepoGist on Product Hunt"
+                width="250"
+                height="54"
+                className="dark:hidden"
+                src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1058716&theme=light"
+              />
+
+              <img
+                alt="RepoGist on Product Hunt"
+                width="250"
+                height="54"
+                className="hidden dark:block"
+                src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1058716&theme=dark"
+              />
+            </a>
+          </div>
+        </div>
+
         {/* Hero Section */}
         <section className="relative flex-1">
           <div className="mx-auto px-2 sm:px-4 lg:px-5">
-            <div className="flex flex-col items-center py-12 sm:py-16 lg:py-20">
+            <div className="flex flex-col items-center py-6">
+              {/* py-16 sm:py-16 lg:py-20 */}
               {/* Heading */}
               <div className="instrument-serif flex flex-col gap-2 px-6 lg:text-7xl md:text-5xl text-4xl">
                 <h1 className="dark:text-white/30 text-secondary-foreground/50">
