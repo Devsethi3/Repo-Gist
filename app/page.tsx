@@ -49,34 +49,11 @@ function HomeContent() {
         <div className="pb-24">
           <HeroHeader />
         </div>
-
         <div className="flex justify-center">
-          <div className="relative rounded-xl border bg-background/60 px-4 py-3 backdrop-blur-sm transition-colors">
-            <p className="mb-2 text-center text-xs text-muted-foreground">
-              Featured on Product Hunt
-            </p>
-            <a
-              href="https://www.producthunt.com/products/repogist?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-repogist"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block"
-            >
-              <img
-                alt="RepoGist on Product Hunt"
-                width="250"
-                height="54"
-                className="dark:hidden"
-                src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1058716&theme=light"
-              />
-
-              <img
-                alt="RepoGist on Product Hunt"
-                width="250"
-                height="54"
-                className="hidden dark:block"
-                src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1058716&theme=dark"
-              />
-            </a>
+          <div className="relative rounded-xl border bg-background/60 px-4 py-3 backdrop-blur-sm transition-colors flex flex-col items-center gap-2">
+            <span className="inline-flex items-center gap-1 rounded-md border border-primary/30 bg-primary/10 px-3 py-1 text-[10px] font-medium text-primary">
+              New: PDF Report Feature
+            </span>
           </div>
         </div>
 
