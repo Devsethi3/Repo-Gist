@@ -7,6 +7,9 @@ import { HeroHeader } from "@/components/header";
 import { RepoAnalyzer } from "@/components/repo-analyzer";
 import { useAnalysis } from "@/hooks/use-analysis";
 
+// Note: Metadata export is in layout.tsx since this is a client component
+// For dynamic metadata based on search params, we handle it in the URL structure
+
 function HomeContent() {
   const searchParams = useSearchParams();
   const { analyze } = useAnalysis();

@@ -39,6 +39,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
+  userScalable: true,
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#ffffff" },
     { media: "(prefers-color-scheme: dark)", color: "#0a0a0a" },
@@ -74,7 +75,25 @@ export const metadata: Metadata = {
     "code health",
     "RepoGist",
     "repo gist",
-    "github repo analyzer",
+    "github repo analyzer",    "codebase analysis",
+    "static code analysis",
+    "code review automation",
+    "software quality metrics",
+    "github insights",
+    "repository scanner",
+    "code audit tool",
+    "developer productivity",
+    "code visualization",
+    "ai code review",    "codebase analysis",
+    "static code analysis",
+    "code review automation",
+    "software quality metrics",
+    "github insights",
+    "repository scanner",
+    "code audit tool",
+    "developer productivity",
+    "code visualization",
+    "ai code review",
   ],
   referrer: "origin-when-cross-origin",
   creator: "Dev Prasad Sethi",
@@ -176,6 +195,10 @@ export const metadata: Metadata = {
   other: {
     "msapplication-TileColor": "#0a0a0a",
     "msapplication-config": "/browserconfig.xml",
+    // Add verification tags if you have them
+    // "google-site-verification": "your-verification-code",
+    // "yandex-verification": "your-verification-code",
+    // "pinterest-site-verification": "your-verification-code",
   },
 };
 
@@ -184,15 +207,19 @@ const jsonLd = {
   "@context": "https://schema.org",
   "@type": "WebApplication",
   name: "RepoGist",
+  alternateName: "Repo Gist",
   description:
     "AI-powered GitHub repository analysis tool for developers. Get instant insights on code quality, architecture, dependencies, and security vulnerabilities.",
   url: siteUrl,
   applicationCategory: "DeveloperApplication",
   operatingSystem: "Any",
+  browserRequirements: "Requires JavaScript. Requires HTML5.",
+  softwareVersion: "1.0.0",
   offers: {
     "@type": "Offer",
     price: "0",
     priceCurrency: "USD",
+    availability: "https://schema.org/InStock",
   },
   author: {
     "@type": "Person",
@@ -213,11 +240,22 @@ const jsonLd = {
     "Security vulnerability detection",
     "Code quality metrics",
     "Actionable improvement suggestions",
+    "Branch comparison",
+    "Architecture diagrams",
+    "PDF report export",
   ],
   aggregateRating: {
     "@type": "AggregateRating",
     ratingValue: "5",
     ratingCount: "1",
+  },
+  potentialAction: {
+    "@type": "SearchAction",
+    target: {
+      "@type": "EntryPoint",
+      urlTemplate: `${siteUrl}/?repo={search_term_string}`,
+    },
+    "query-input": "required name=search_term_string",
   },
 };
 
