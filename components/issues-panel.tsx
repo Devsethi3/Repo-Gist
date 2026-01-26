@@ -320,7 +320,7 @@ function IssueItem({
                   <Button
                     variant="outline"
                     size="sm"
-                    className="text-xs h-9 flex-1 sm:flex-none"
+                    className="text-xs font-normal"
                     onClick={() => handleCopy()}
                   >
                     {copied ? (
@@ -336,11 +336,7 @@ function IssueItem({
                     )}
                   </Button>
 
-                  <Button
-                    size="sm"
-                    className="text-xs h-9 flex-1 sm:flex-none"
-                    asChild
-                  >
+                  <Button size="sm" className="text-xs font-normal" asChild>
                     <Link
                       href={githubUrl}
                       target="_blank"
@@ -606,7 +602,7 @@ export function IssuesPanel({
                   setFilter(v as "all" | SuggestedIssue["type"])
                 }
               >
-                <SelectTrigger className="h-7 text-xs">
+                <SelectTrigger className="h-7 text-xs w-40">
                   <SelectValue placeholder="Type" />
                 </SelectTrigger>
                 <SelectContent>

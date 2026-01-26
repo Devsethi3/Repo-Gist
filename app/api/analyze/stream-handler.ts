@@ -1,10 +1,8 @@
-// api/analyze/stream-handler.ts
 import { FileNode, BranchInfo } from "@/lib/types";
 import { RepoMetadata, FileStats, StreamEvent } from "./types";
 import { CodeMetrics } from "./code-analyzer";
 import { GeneratedAutomation } from "./automation-generator";
 import { GeneratedRefactor } from "./refactor-generator";
-import { GeneratedPR } from "./pr-generator";
 
 const encoder = new TextEncoder();
 
@@ -35,7 +33,6 @@ interface PreComputedData {
   };
   automations: GeneratedAutomation[];
   refactors: GeneratedRefactor[];
-  pullRequests: GeneratedPR[];
   metrics: CodeMetrics;
 }
 
@@ -50,7 +47,7 @@ export function createAnalysisStream(
 ): ReadableStream {
   return new ReadableStream({
     async start(controller) {
-      // Send metadata first
+      // Send metadata
       controller.enqueue(
         encodeStreamEvent({
           type: "metadata",
@@ -58,7 +55,7 @@ export function createAnalysisStream(
         }),
       );
 
-      // Send pre-computed scores immediately
+      // Send pre-computed scores
       controller.enqueue(
         encodeStreamEvent({
           type: "scores",
@@ -66,7 +63,7 @@ export function createAnalysisStream(
         }),
       );
 
-      // Send pre-computed automations
+      // Send automations
       controller.enqueue(
         encodeStreamEvent({
           type: "automations",
@@ -74,7 +71,7 @@ export function createAnalysisStream(
         }),
       );
 
-      // Send pre-computed refactors
+      // Send refactors
       controller.enqueue(
         encodeStreamEvent({
           type: "refactors",
@@ -82,14 +79,7 @@ export function createAnalysisStream(
         }),
       );
 
-      controller.enqueue(
-        encodeStreamEvent({
-          type: "pullRequests",
-          data: preComputed.pullRequests,
-        }),
-      );
-
-      // Stream AI content for insights, architecture, etc.
+      // Stream AI content
       try {
         for await (const chunk of textStream) {
           controller.enqueue(

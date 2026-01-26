@@ -48,7 +48,7 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   // Basic Meta Tags
   title: {
-    default: "RepoGist - Analyze any public GitHub repository with AI",
+    default: "RepoGist | Analyze any public GitHub repository with AI",
     template: "%s | RepoGist",
   },
   description:

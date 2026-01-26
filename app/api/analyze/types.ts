@@ -1,17 +1,10 @@
-// api/analyze/types.ts
 import { fetchRepoMetadata, calculateFileStats } from "@/lib/github";
 import { FileNode, BranchInfo } from "@/lib/types";
 import { GeneratedRefactor } from "./refactor-generator";
-import { GeneratedPR } from "./pr-generator";
 
 export interface EnvConfig {
   OPENROUTER_API_KEY: string;
   GITHUB_TOKEN: string | undefined;
-}
-
-export interface StreamEventPullRequests {
-  type: "pullRequests";
-  data: GeneratedPR[];
 }
 
 export interface RateLimitRecord {
@@ -91,8 +84,7 @@ export type StreamEvent =
   | StreamEventDone
   | StreamEventScores
   | StreamEventAutomations
-  | StreamEventRefactors
-  | StreamEventPullRequests;
+  | StreamEventRefactors;
 
 export type RepoMetadata = Awaited<ReturnType<typeof fetchRepoMetadata>>;
 export type FileStats = ReturnType<typeof calculateFileStats>;

@@ -261,7 +261,7 @@ function PRPreviewDialog({
           </TabsContent>
         </Tabs>
 
-        <div className="flex justify-end gap-2 pt-4 border-t mt-4">
+        <div className="flex justify-end flex-col gap-2 pt-4 border-t mt-4">
           <Button variant="outline" onClick={handleCopyBody}>
             <Copy className="w-4 h-4 mr-2" />
             Copy Description
@@ -469,7 +469,7 @@ function PRSuggestionItem({
 
                   <Button
                     size="sm"
-                    className="text-xs h-8 flex-1 sm:flex-none"
+                    className="text-xs font-normal"
                     asChild
                   >
                     <Link
@@ -526,20 +526,14 @@ export function PRSuggestionsPanel({
             <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
               <GitPullRequest className="w-5 h-5 text-purple-500" />
               Pull Request Suggestions
-              {highPriorityCount > 0 && (
-                <Badge variant="destructive" className="text-[10px] h-5 ml-1">
-                  {highPriorityCount} High Priority
-                </Badge>
-              )}
             </CardTitle>
           </div>
 
           {/* Filters & Stats */}
           <div className="flex flex-wrap items-center gap-2">
             <div className="flex items-center gap-1.5">
-              <Filter className="w-3.5 h-3.5 text-muted-foreground" />
               <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                <SelectTrigger className="h-7 text-xs w-30">
+                <SelectTrigger className="h-7 text-xs lg:w-full w-30">
                   <SelectValue placeholder="Category" />
                 </SelectTrigger>
                 <SelectContent>
@@ -553,7 +547,7 @@ export function PRSuggestionsPanel({
               </Select>
 
               <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-                <SelectTrigger className="h-7 text-xs w-25">
+                <SelectTrigger className="h-7 text-xs lg:w-full w-25">
                   <SelectValue placeholder="Priority" />
                 </SelectTrigger>
                 <SelectContent>
@@ -564,6 +558,12 @@ export function PRSuggestionsPanel({
                 </SelectContent>
               </Select>
             </div>
+
+            {highPriorityCount > 0 && (
+              <Badge variant="destructive" className="text-[10px] h-5 ml-1">
+                {highPriorityCount} High Priority
+              </Badge>
+            )}
 
             <div className="flex flex-wrap gap-1.5 ml-auto">
               <Badge

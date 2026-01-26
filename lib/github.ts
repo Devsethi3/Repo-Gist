@@ -1,4 +1,3 @@
-// lib/github.ts
 import { FileNode, FileStats, RepoMetadata, BranchInfo } from "./types";
 import { getLanguageFromExtension, getFileExtension } from "./utils";
 import { MAX_TREE_ITEMS, MAX_FILE_TREE_DEPTH } from "./constants";
@@ -25,15 +24,20 @@ interface GitHubBranchResponse {
   protected: boolean;
 }
 
+// Cache headers object to avoid recreation
+const BASE_HEADERS: HeadersInit = {
+  Accept: "application/vnd.github.v3+json",
+  "User-Agent": "RepoGist-Analyzer",
+};
+
 function getHeaders(): HeadersInit {
-  const headers: HeadersInit = {
-    Accept: "application/vnd.github.v3+json",
-    "User-Agent": "RepoGist-Analyzer",
-  };
   if (process.env.GITHUB_TOKEN) {
-    headers.Authorization = `Bearer ${process.env.GITHUB_TOKEN}`;
+    return {
+      ...BASE_HEADERS,
+      Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
+    };
   }
-  return headers;
+  return BASE_HEADERS;
 }
 
 /**
@@ -44,44 +48,34 @@ export async function fetchRepoBranches(
   repo: string,
   defaultBranch?: string,
 ): Promise<BranchInfo[]> {
-  const branches: BranchInfo[] = [];
-  let page = 1;
   const perPage = 100;
-  const maxBranches = 100; // Limit to prevent excessive API calls
+  const maxBranches = 100;
 
   try {
-    while (branches.length < maxBranches) {
-      const response = await fetch(
-        `${GITHUB_API_BASE}/repos/${owner}/${repo}/branches?per_page=${perPage}&page=${page}`,
-        { headers: getHeaders(), cache: "no-store" },
-      );
+    // Single request for most repos (< 100 branches)
+    const response = await fetch(
+      `${GITHUB_API_BASE}/repos/${owner}/${repo}/branches?per_page=${perPage}`,
+      { headers: getHeaders(), cache: "no-store" },
+    );
 
-      if (!response.ok) {
-        if (response.status === 404) {
-          throw new Error("Repository not found");
-        }
-        throw new Error(`Failed to fetch branches: ${response.statusText}`);
+    if (!response.ok) {
+      if (response.status === 404) {
+        throw new Error("Repository not found");
       }
-
-      const data: GitHubBranchResponse[] = await response.json();
-
-      if (data.length === 0) break;
-
-      branches.push(
-        ...data.map((branch) => ({
-          name: branch.name,
-          commit: {
-            sha: branch.commit.sha,
-            url: branch.commit.url,
-          },
-          protected: branch.protected,
-          isDefault: branch.name === defaultBranch,
-        })),
-      );
-
-      if (data.length < perPage) break;
-      page++;
+      throw new Error(`Failed to fetch branches: ${response.statusText}`);
     }
+
+    const data: GitHubBranchResponse[] = await response.json();
+
+    const branches: BranchInfo[] = data.slice(0, maxBranches).map((branch) => ({
+      name: branch.name,
+      commit: {
+        sha: branch.commit.sha,
+        url: branch.commit.url,
+      },
+      protected: branch.protected,
+      isDefault: branch.name === defaultBranch,
+    }));
 
     // Sort: default branch first, then protected, then alphabetically
     return branches.sort((a, b) => {
@@ -93,7 +87,6 @@ export async function fetchRepoBranches(
     });
   } catch (error) {
     console.error("Error fetching branches:", error);
-    // Return empty array instead of throwing - branches are optional
     return [];
   }
 }
@@ -150,7 +143,8 @@ export async function fetchRepoMetadata(
   };
 }
 
-const excludePatterns = [
+// Pre-compiled regex for performance
+const EXCLUDE_PATTERNS = [
   /^node_modules\//,
   /^\.git\//,
   /^vendor\//,
@@ -163,18 +157,19 @@ const excludePatterns = [
   /^\.venv\//,
   /^venv\//,
   /^target\//,
-  /\.min\.js$/,
-  /\.min\.css$/,
+  /\.min\.(js|css)$/,
   /\.map$/,
-  /\.lock$/,
+  /\.(lock|png|jpg|jpeg|gif|ico|svg|woff2?|ttf|eot|mp[34]|pdf|zip|tar|gz)$/i,
   /package-lock\.json$/,
   /yarn\.lock$/,
   /pnpm-lock\.yaml$/,
-  /\.(png|jpg|jpeg|gif|ico|svg|woff2?|ttf|eot|mp[34]|pdf|zip|tar|gz)$/i,
 ];
 
 function shouldExclude(path: string): boolean {
-  return excludePatterns.some((pattern) => pattern.test(path));
+  for (const pattern of EXCLUDE_PATTERNS) {
+    if (pattern.test(path)) return true;
+  }
+  return false;
 }
 
 /**
@@ -185,9 +180,7 @@ export async function fetchRepoTree(
   repo: string,
   branch?: string,
 ): Promise<FileNode[]> {
-  // Try the specified branch, then default to main, then master
   const branchesToTry = branch ? [branch] : ["main", "master"];
-
   let lastError: Error | null = null;
 
   for (const targetBranch of branchesToTry) {
@@ -199,12 +192,16 @@ export async function fetchRepoTree(
 
       if (response.ok) {
         const data: GitHubTreeResponse = await response.json();
-        const filteredItems = data.tree
-          .filter((item) => {
-            const depth = item.path.split("/").length;
-            return depth <= MAX_FILE_TREE_DEPTH && !shouldExclude(item.path);
-          })
-          .slice(0, MAX_TREE_ITEMS);
+
+        // Filter and limit in single pass
+        const filteredItems: GitHubTreeItem[] = [];
+        for (const item of data.tree) {
+          if (filteredItems.length >= MAX_TREE_ITEMS) break;
+          const depth = item.path.split("/").length;
+          if (depth <= MAX_FILE_TREE_DEPTH && !shouldExclude(item.path)) {
+            filteredItems.push(item);
+          }
+        }
 
         return buildFileTree(filteredItems);
       }
@@ -229,9 +226,10 @@ function buildFileTree(items: GitHubTreeItem[]): FileNode[] {
   const root: FileNode[] = [];
   const pathMap = new Map<string, FileNode>();
 
-  const sortedItems = [...items].sort((a, b) => a.path.localeCompare(b.path));
+  // Sort items by path for proper parent-child ordering
+  items.sort((a, b) => a.path.localeCompare(b.path));
 
-  for (const item of sortedItems) {
+  for (const item of items) {
     const pathParts = item.path.split("/");
     const name = pathParts[pathParts.length - 1];
     const parentPath = pathParts.slice(0, -1).join("/");
@@ -273,6 +271,72 @@ function sortFileTree(nodes: FileNode[]): FileNode[] {
     }));
 }
 
+// Important files to fetch - prioritized order
+const IMPORTANT_FILES = [
+  // High priority config
+  "package.json",
+  "README.md",
+  "readme.md",
+  "tsconfig.json",
+  // Framework configs
+  "next.config.js",
+  "next.config.ts",
+  "next.config.mjs",
+  "vite.config.ts",
+  "vite.config.js",
+  // Styling
+  "tailwind.config.js",
+  "tailwind.config.ts",
+  // Linting
+  "eslint.config.js",
+  ".eslintrc.js",
+  ".eslintrc.json",
+  "biome.json",
+  ".prettierrc",
+  ".prettierrc.json",
+  // Database
+  "prisma/schema.prisma",
+  // Docker
+  "docker-compose.yml",
+  "docker-compose.yaml",
+  "Dockerfile",
+  // Python
+  "requirements.txt",
+  "pyproject.toml",
+  "setup.py",
+  // Other languages
+  "Cargo.toml",
+  "go.mod",
+  "pom.xml",
+  "build.gradle",
+  // CI/CD
+  ".env.example",
+  ".github/workflows/ci.yml",
+  ".github/workflows/main.yml",
+  ".github/dependabot.yml",
+  // Docs
+  "CHANGELOG.md",
+  "CONTRIBUTING.md",
+  "LICENSE",
+  // Source files
+  "src/index.ts",
+  "src/index.js",
+  "src/main.ts",
+  "src/main.js",
+  "src/app.ts",
+  "src/app.js",
+  "app/page.tsx",
+  "app/layout.tsx",
+  "pages/index.tsx",
+  "pages/_app.tsx",
+  "lib/utils.ts",
+  "src/lib/utils.ts",
+  "main.py",
+  "app.py",
+  "main.go",
+  "src/main.rs",
+];
+
 /**
  * Fetch important files from a specific branch
  */
@@ -282,71 +346,9 @@ export async function fetchImportantFiles(
   branch?: string,
 ): Promise<Record<string, string>> {
   const targetBranch = branch || "main";
-
-  // Expanded list for better analysis
-  const configFiles = [
-    "package.json",
-    "README.md",
-    "readme.md",
-    "tsconfig.json",
-    "next.config.js",
-    "next.config.ts",
-    "next.config.mjs",
-    "vite.config.ts",
-    "vite.config.js",
-    "tailwind.config.js",
-    "tailwind.config.ts",
-    "eslint.config.js",
-    ".eslintrc.js",
-    ".eslintrc.json",
-    "biome.json",
-    ".prettierrc",
-    ".prettierrc.json",
-    "prisma/schema.prisma",
-    "docker-compose.yml",
-    "docker-compose.yaml",
-    "Dockerfile",
-    "requirements.txt",
-    "pyproject.toml",
-    "setup.py",
-    "Cargo.toml",
-    "go.mod",
-    "pom.xml",
-    "build.gradle",
-    ".env.example",
-    ".github/workflows/ci.yml",
-    ".github/workflows/main.yml",
-    ".github/dependabot.yml",
-    "CHANGELOG.md",
-    "CONTRIBUTING.md",
-    "LICENSE",
-  ];
-
-  // Also try to fetch some source files for better analysis
-  const sourcePatterns = [
-    "src/index.ts",
-    "src/index.js",
-    "src/main.ts",
-    "src/main.js",
-    "src/app.ts",
-    "src/app.js",
-    "app/page.tsx",
-    "app/layout.tsx",
-    "pages/index.tsx",
-    "pages/_app.tsx",
-    "lib/utils.ts",
-    "utils/index.ts",
-    "src/lib/utils.ts",
-    "main.py",
-    "app.py",
-    "main.go",
-    "src/main.rs",
-  ];
-
-  const allFiles = [...configFiles, ...sourcePatterns];
   const contents: Record<string, string> = {};
   let totalSize = 0;
-  const maxSize = 100000; // 100KB total
+  const maxTotalSize = 100000; // 100KB total
   const maxFileSize = 8000; // 8KB per file
 
   const fetchFile = async (
@@ -366,19 +368,23 @@ export async function fetchImportantFiles(
         }
       }
     } catch {
-      // Skip file
+      // Silently skip failed files
     }
     return null;
   };
 
   // Fetch in parallel batches
-  const batchSize = 8;
-  for (let i = 0; i < allFiles.length && totalSize < maxSize; i += batchSize) {
-    const batch = allFiles.slice(i, i + batchSize);
+  const batchSize = 10;
+  for (
+    let i = 0;
+    i < IMPORTANT_FILES.length && totalSize < maxTotalSize;
+    i += batchSize
+  ) {
+    const batch = IMPORTANT_FILES.slice(i, i + batchSize);
     const results = await Promise.all(batch.map(fetchFile));
 
     for (const result of results) {
-      if (result && totalSize + result.content.length < maxSize) {
+      if (result && totalSize + result.content.length < maxTotalSize) {
         contents[result.file] = result.content;
         totalSize += result.content.length;
       }
@@ -393,21 +399,23 @@ export function calculateFileStats(tree: FileNode[]): FileStats {
   let totalDirectories = 0;
   const languages: Record<string, number> = {};
 
-  function traverse(nodes: FileNode[]) {
-    for (const node of nodes) {
-      if (node.type === "directory") {
-        totalDirectories++;
-        if (node.children) traverse(node.children);
-      } else {
-        totalFiles++;
-        if (node.language) {
-          languages[node.language] = (languages[node.language] || 0) + 1;
-        }
+  const stack: FileNode[] = [...tree];
+
+  while (stack.length > 0) {
+    const node = stack.pop()!;
+    if (node.type === "directory") {
+      totalDirectories++;
+      if (node.children) {
+        stack.push(...node.children);
+      }
+    } else {
+      totalFiles++;
+      if (node.language) {
+        languages[node.language] = (languages[node.language] || 0) + 1;
       }
     }
   }
 
-  traverse(tree);
   return { totalFiles, totalDirectories, languages };
 }
 

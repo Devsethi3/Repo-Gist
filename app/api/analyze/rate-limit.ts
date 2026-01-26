@@ -1,10 +1,24 @@
-// api/analyze/rate-limit.ts
 import { RateLimitRecord, RateLimitResult } from "./types";
 import { RATE_LIMIT } from "./config";
 
 const rateLimitMap = new Map<string, RateLimitRecord>();
 
+// Cleanup interval - runs every minute
+let cleanupInterval: NodeJS.Timeout | null = null;
+
+function ensureCleanupRunning() {
+  if (!cleanupInterval) {
+    cleanupInterval = setInterval(cleanupExpiredRecords, 60 * 1000);
+    // Don't prevent process exit
+    if (cleanupInterval.unref) {
+      cleanupInterval.unref();
+    }
+  }
+}
+
 export function checkRateLimit(ip: string): RateLimitResult {
+  ensureCleanupRunning();
+
   const now = Date.now();
   const record = rateLimitMap.get(ip);
 
@@ -25,16 +39,18 @@ export function checkRateLimit(ip: string): RateLimitResult {
 }
 
 export function getClientIP(request: Request): string {
+  // Prefer trusted proxy headers (Cloudflare, Vercel)
+  const cfIP = request.headers.get("cf-connecting-ip");
+  if (cfIP) return cfIP;
+
+  const vercelIP = request.headers.get("x-vercel-forwarded-for");
+  if (vercelIP) return vercelIP.split(",")[0].trim();
+
   const forwarded = request.headers.get("x-forwarded-for");
+  if (forwarded) return forwarded.split(",")[0].trim();
+
   const realIP = request.headers.get("x-real-ip");
-
-  if (forwarded) {
-    return forwarded.split(",")[0].trim();
-  }
-
-  if (realIP) {
-    return realIP;
-  }
+  if (realIP) return realIP;
 
   return "unknown";
 }

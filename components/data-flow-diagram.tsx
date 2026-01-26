@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useEffect, useCallback } from "react";
+import { useMemo, useState, useEffect, useCallback, useRef } from "react";
 import { motion } from "framer-motion";
 import {
   ArrowRight,
@@ -14,6 +14,7 @@ import {
   Check,
   Maximize2,
   Download,
+  AlertTriangle,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -35,14 +36,14 @@ interface DataFlowDiagramProps {
   mermaidDiagram?: MermaidDiagram;
 }
 
-const nodeConfig = {
+const NODE_CONFIG = {
   source: { icon: Circle, label: "Sources" },
   process: { icon: Square, label: "Processes" },
   store: { icon: Database, label: "Storage" },
   output: { icon: ArrowRightCircle, label: "Outputs" },
 } as const;
 
-const nodeOrder = ["source", "process", "store", "output"] as const;
+const NODE_ORDER = ["source", "process", "store", "output"] as const;
 
 const getMermaidThemeVariables = (isDark: boolean) =>
   isDark
@@ -79,39 +80,46 @@ const getMermaidThemeVariables = (isDark: boolean) =>
         nodeTextColor: "#0f172a",
       };
 
-// Optimize SVG: remove excess whitespace and scale properly
 const optimizeSvg = (svgString: string): string => {
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(svgString, "image/svg+xml");
-  const svg = doc.querySelector("svg");
+  try {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(svgString, "image/svg+xml");
+    const svg = doc.querySelector("svg");
 
-  if (!svg) return svgString;
+    if (!svg) return svgString;
 
-  // Get the actual content bounds from the SVG group
-  const gElement = svg.querySelector("g.output");
-  if (gElement) {
-    const bbox = (gElement as SVGGraphicsElement).getBBox?.();
-    if (bbox && bbox.width > 0 && bbox.height > 0) {
-      const padding = 20;
-      const newViewBox = `${bbox.x - padding} ${bbox.y - padding} ${
-        bbox.width + padding * 2
-      } ${bbox.height + padding * 2}`;
-      svg.setAttribute("viewBox", newViewBox);
+    const gElement = svg.querySelector("g.output");
+    if (
+      gElement &&
+      typeof (gElement as SVGGraphicsElement).getBBox === "function"
+    ) {
+      try {
+        const bbox = (gElement as SVGGraphicsElement).getBBox();
+        if (bbox.width > 0 && bbox.height > 0) {
+          const padding = 20;
+          svg.setAttribute(
+            "viewBox",
+            `${bbox.x - padding} ${bbox.y - padding} ${bbox.width + padding * 2} ${bbox.height + padding * 2}`,
+          );
+        }
+      } catch {
+        // getBBox can fail if element is not rendered
+      }
     }
+
+    svg.removeAttribute("width");
+    svg.removeAttribute("height");
+    svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
+    svg.style.width = "100%";
+    svg.style.height = "100%";
+    svg.style.maxHeight = "500px";
+
+    return new XMLSerializer().serializeToString(svg);
+  } catch {
+    return svgString;
   }
-
-  // Remove fixed dimensions to allow responsive scaling
-  svg.removeAttribute("width");
-  svg.removeAttribute("height");
-  svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
-  svg.style.width = "100%";
-  svg.style.height = "100%";
-  svg.style.maxHeight = "500px";
-
-  return new XMLSerializer().serializeToString(svg);
 };
 
-// Convert SVG to high-quality PNG
 const downloadAsPng = async (
   svgString: string,
   isDark: boolean,
@@ -122,27 +130,20 @@ const downloadAsPng = async (
 
   if (!svg) throw new Error("Invalid SVG");
 
-  // Calculate proper dimensions
   const viewBox = svg.getAttribute("viewBox")?.split(" ").map(Number) || [];
-  const width = viewBox[2] || 800;
-  const height = viewBox[3] || 600;
-
-  // Set explicit dimensions for export
-  const exportWidth = Math.max(width, 800);
-  const exportHeight = Math.max(height, 400);
+  const width = Math.max(viewBox[2] || 800, 800);
+  const height = Math.max(viewBox[3] || 400, 400);
   const scale = 2;
 
-  svg.setAttribute("width", String(exportWidth));
-  svg.setAttribute("height", String(exportHeight));
+  svg.setAttribute("width", String(width));
+  svg.setAttribute("height", String(height));
 
-  // Add background
   const bg = document.createElementNS("http://www.w3.org/2000/svg", "rect");
   bg.setAttribute("width", "100%");
   bg.setAttribute("height", "100%");
   bg.setAttribute("fill", isDark ? "#09090b" : "#ffffff");
   svg.insertBefore(bg, svg.firstChild);
 
-  // Convert to base64 data URL
   const svgData = new XMLSerializer().serializeToString(svg);
   const base64 = btoa(unescape(encodeURIComponent(svgData)));
   const dataUrl = `data:image/svg+xml;base64,${base64}`;
@@ -151,8 +152,8 @@ const downloadAsPng = async (
     const img = new Image();
     img.onload = () => {
       const canvas = document.createElement("canvas");
-      canvas.width = exportWidth * scale;
-      canvas.height = exportHeight * scale;
+      canvas.width = width * scale;
+      canvas.height = height * scale;
 
       const ctx = canvas.getContext("2d");
       if (!ctx) {
@@ -161,7 +162,7 @@ const downloadAsPng = async (
       }
 
       ctx.scale(scale, scale);
-      ctx.drawImage(img, 0, 0, exportWidth, exportHeight);
+      ctx.drawImage(img, 0, 0, width, height);
 
       canvas.toBlob(
         (blob) => {
@@ -194,12 +195,24 @@ export function DataFlowDiagram({
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
 
-  const [activeTab, setActiveTab] = useState<"visual" | "mermaid">("visual");
+  const diagram = useMemo(() => {
+    if (mermaidDiagram) return mermaidDiagram;
+    if (nodes.length > 0) return generateDataFlowDiagram(nodes, edges);
+    return null;
+  }, [mermaidDiagram, nodes, edges]);
+
+  const [activeTab, setActiveTab] = useState<"visual" | "mermaid">("mermaid");
   const [copied, setCopied] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
   const [downloading, setDownloading] = useState(false);
-  const [mermaidSvg, setMermaidSvg] = useState<string>("");
-  const [rawSvg, setRawSvg] = useState<string>("");
+  const [svgData, setSvgData] = useState<{
+    optimized: string;
+    raw: string;
+  } | null>(null);
+  const [isRendering, setIsRendering] = useState(false);
+  const [renderError, setRenderError] = useState<string | null>(null);
+
+  const lastRenderRef = useRef<{ theme: string; code: string } | null>(null);
 
   const nodeMap = useMemo(() => new Map(nodes.map((n) => [n.id, n])), [nodes]);
 
@@ -216,21 +229,27 @@ export function DataFlowDiagram({
     return groups;
   }, [nodes]);
 
-  const activeTypes = nodeOrder.filter(
-    (type) => groupedNodes[type]?.length > 0,
+  const activeTypes = useMemo(
+    () => NODE_ORDER.filter((type) => groupedNodes[type]?.length > 0),
+    [groupedNodes],
   );
 
-  const diagram = useMemo(() => {
-    if (mermaidDiagram) return mermaidDiagram;
-    if (nodes.length > 0) return generateDataFlowDiagram(nodes, edges);
-    return null;
-  }, [mermaidDiagram, nodes, edges]);
-
-  // Render Mermaid diagram
+  // Mermaid rendering effect
   useEffect(() => {
-    if (!diagram || activeTab !== "mermaid") return;
+    if (!diagram) return;
+
+    // Skip if already rendered with same theme and code
+    if (
+      lastRenderRef.current?.theme === resolvedTheme &&
+      lastRenderRef.current?.code === diagram.code &&
+      svgData
+    ) {
+      return;
+    }
 
     let cancelled = false;
+    setIsRendering(true);
+    setRenderError(null);
 
     const render = async () => {
       try {
@@ -251,24 +270,43 @@ export function DataFlowDiagram({
           securityLevel: "loose",
         });
 
-        const id = `mermaid-${Date.now()}`;
+        const id = `mermaid-dataflow-${Date.now()}`;
         const { svg } = await mermaid.render(id, diagram.code);
 
         if (cancelled) return;
 
-        setRawSvg(svg);
-        setMermaidSvg(optimizeSvg(svg));
+        lastRenderRef.current = {
+          theme: resolvedTheme || "light",
+          code: diagram.code,
+        };
+        setSvgData({
+          raw: svg,
+          optimized: optimizeSvg(svg),
+        });
+        setRenderError(null);
       } catch (error) {
         console.error("Mermaid render failed:", error);
-        setMermaidSvg("");
+        if (!cancelled) {
+          setSvgData(null);
+          setRenderError(
+            error instanceof Error ? error.message : "Failed to render diagram",
+          );
+          // Auto-switch to visual view on error
+          setActiveTab("visual");
+        }
+      } finally {
+        if (!cancelled) {
+          setIsRendering(false);
+        }
       }
     };
 
     render();
+
     return () => {
       cancelled = true;
     };
-  }, [diagram, activeTab, isDark]);
+  }, [diagram, resolvedTheme, isDark, svgData]);
 
   const handleCopy = useCallback(async () => {
     if (!diagram) return;
@@ -278,14 +316,13 @@ export function DataFlowDiagram({
   }, [diagram]);
 
   const handleDownload = useCallback(async () => {
-    if (!rawSvg) return;
+    if (!svgData?.raw) return;
     setDownloading(true);
     try {
-      await downloadAsPng(rawSvg, isDark);
+      await downloadAsPng(svgData.raw, isDark);
     } catch (error) {
       console.error("Download failed:", error);
-      // Fallback to SVG download
-      const blob = new Blob([rawSvg], { type: "image/svg+xml" });
+      const blob = new Blob([svgData.raw], { type: "image/svg+xml" });
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
@@ -295,7 +332,7 @@ export function DataFlowDiagram({
     } finally {
       setDownloading(false);
     }
-  }, [rawSvg, isDark]);
+  }, [svgData, isDark]);
 
   if (nodes.length === 0) {
     return (
@@ -313,78 +350,6 @@ export function DataFlowDiagram({
       </Card>
     );
   }
-
-  const DiagramActions = ({ size = "sm" }: { size?: "sm" | "default" }) => (
-    <div className="flex items-center gap-2">
-      <Button
-        variant="outline"
-        size={size}
-        onClick={handleDownload}
-        disabled={!rawSvg || downloading}
-        className={cn(size === "sm" && "h-7 text-xs gap-1.5")}
-      >
-        {downloading ? (
-          <div className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
-        ) : (
-          <Download className="w-3.5 h-3.5" />
-        )}
-        {downloading ? "Saving..." : "PNG"}
-      </Button>
-      <Button
-        variant="outline"
-        size={size}
-        onClick={handleCopy}
-        className={cn(size === "sm" && "h-7 text-xs gap-1.5")}
-      >
-        {copied ? (
-          <Check className="w-3.5 h-3.5 text-green-500" />
-        ) : (
-          <Code className="w-3.5 h-3.5" />
-        )}
-        {copied ? "Copied" : "Code"}
-      </Button>
-      {!fullscreen && (
-        <Button
-          variant="outline"
-          size={size}
-          onClick={() => setFullscreen(true)}
-          className={cn(size === "sm" && "h-7 text-xs gap-1.5")}
-        >
-          <Maximize2 className="w-3.5 h-3.5" />
-        </Button>
-      )}
-    </div>
-  );
-
-  const MermaidView = ({
-    isFullscreen = false,
-  }: {
-    isFullscreen?: boolean;
-  }) => (
-    <div
-      className={cn(
-        "rounded-lg border border-border/50 overflow-hidden",
-        isDark ? "bg-zinc-950" : "bg-white",
-      )}
-    >
-      {mermaidSvg ? (
-        <div
-          className={cn(
-            "w-full flex items-center justify-center p-4",
-            isFullscreen ? "min-h-[40vh]" : "min-h-75 max-h-125",
-          )}
-          dangerouslySetInnerHTML={{ __html: mermaidSvg }}
-        />
-      ) : (
-        <div className="flex items-center justify-center min-h-75">
-          <div className="flex flex-col items-center gap-3">
-            <div className="w-6 h-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
-            <p className="text-sm text-muted-foreground">Rendering...</p>
-          </div>
-        </div>
-      )}
-    </div>
-  );
 
   return (
     <>
@@ -408,7 +373,11 @@ export function DataFlowDiagram({
                     <TabsTrigger value="visual" className="text-xs h-6 px-2">
                       Visual
                     </TabsTrigger>
-                    <TabsTrigger value="mermaid" className="text-xs h-6 px-2">
+                    <TabsTrigger
+                      value="mermaid"
+                      className="text-xs h-6 px-2"
+                      disabled={!!renderError}
+                    >
                       Diagram
                     </TabsTrigger>
                   </TabsList>
@@ -419,109 +388,25 @@ export function DataFlowDiagram({
         </CardHeader>
 
         <CardContent className="p-4">
-          {activeTab === "visual" ? (
-            <div className="space-y-6">
-              <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-                {activeTypes.map((type, typeIndex) => {
-                  const config = nodeConfig[type];
-                  const Icon = config.icon;
-                  const typeNodes = groupedNodes[type];
-
-                  return (
-                    <motion.div
-                      key={type}
-                      initial={{ opacity: 0, y: 8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: typeIndex * 0.05 }}
-                      className="space-y-2"
-                    >
-                      <div className="flex items-center gap-2 pb-1.5 border-b border-border/40">
-                        <Icon className="w-3.5 h-3.5 text-muted-foreground" />
-                        <span className="text-xs font-semibold uppercase tracking-wider">
-                          {config.label}
-                        </span>
-                        <span className="text-[10px] text-muted-foreground/60 ml-auto">
-                          {typeNodes.length}
-                        </span>
-                      </div>
-
-                      <div className="space-y-1.5">
-                        {typeNodes.map((node) => (
-                          <div
-                            key={node.id}
-                            className="p-2.5 rounded-md border border-border/40 bg-muted/20 hover:bg-muted/30 transition-colors"
-                          >
-                            <h4 className="text-sm font-medium truncate">
-                              {node.name}
-                            </h4>
-                            <p className="text-xs text-muted-foreground mt-0.5">
-                              {node.description}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                    </motion.div>
-                  );
-                })}
-              </div>
-
-              {edges.length > 0 && (
-                <div className="space-y-3 pt-4 border-t border-border/40">
-                  <div className="flex items-center gap-2">
-                    <LinkIcon className="w-3.5 h-3.5 text-muted-foreground" />
-                    <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                      Connections
-                    </span>
-                  </div>
-
-                  <div className="grid gap-1.5 grid-cols-1 md:grid-cols-2">
-                    {edges.map((edge) => {
-                      const from = nodeMap.get(edge.from);
-                      const to = nodeMap.get(edge.to);
-                      if (!from || !to) return null;
-
-                      return (
-                        <div
-                          key={`${edge.from}-${edge.to}`}
-                          className="flex items-center gap-2 p-2 rounded-md bg-muted/10 hover:bg-muted/20 transition-colors text-xs"
-                        >
-                          <span className="font-medium truncate">
-                            {from.name}
-                          </span>
-                          <ArrowRight className="w-3 h-3 text-muted-foreground/50 shrink-0" />
-                          <span className="font-medium truncate">
-                            {to.name}
-                          </span>
-                          {edge.label && (
-                            <span className="ml-auto text-[10px] text-muted-foreground/70 px-1.5 py-0.5 rounded bg-muted/50 truncate max-w-20">
-                              {edge.label}
-                            </span>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-            </div>
+          {activeTab === "mermaid" && !renderError ? (
+            <MermaidContent
+              svgData={svgData}
+              isRendering={isRendering}
+              diagram={diagram}
+              isDark={isDark}
+              downloading={downloading}
+              copied={copied}
+              onDownload={handleDownload}
+              onCopy={handleCopy}
+              onFullscreen={() => setFullscreen(true)}
+            />
           ) : (
-            <div className="space-y-3">
-              <div className="flex justify-end">
-                <DiagramActions />
-              </div>
-              <MermaidView />
-              {diagram && (
-                <details className="group">
-                  <summary className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer hover:text-foreground">
-                    <Code className="w-3.5 h-3.5" />
-                    Mermaid Code
-                  </summary>
-                  <pre className="mt-2 p-3 rounded-md bg-muted/50 border border-border/50 text-xs font-mono overflow-auto max-h-40">
-                    {diagram.code}
-                  </pre>
-                </details>
-              )}
-            </div>
+            <VisualView
+              activeTypes={activeTypes}
+              groupedNodes={groupedNodes}
+              edges={edges}
+              nodeMap={nodeMap}
+            />
           )}
         </CardContent>
       </Card>
@@ -535,9 +420,16 @@ export function DataFlowDiagram({
             <div className="flex items-center justify-between">
               <DialogTitle className="flex items-center gap-2 text-base font-medium">
                 <Workflow className="w-5 h-5 text-primary" />
-                Diagram
+                Data Flow Diagram
               </DialogTitle>
-              <DiagramActions size="default" />
+              <DiagramActions
+                size="default"
+                downloading={downloading}
+                copied={copied}
+                canDownload={!!svgData?.raw}
+                onDownload={handleDownload}
+                onCopy={handleCopy}
+              />
             </div>
           </DialogHeader>
           <div
@@ -546,10 +438,277 @@ export function DataFlowDiagram({
               isDark ? "bg-zinc-950" : "bg-white",
             )}
           >
-            <MermaidView isFullscreen />
+            <MermaidView
+              svgData={svgData}
+              isRendering={isRendering}
+              isDark={isDark}
+              isFullscreen
+            />
           </div>
         </DialogContent>
       </Dialog>
     </>
+  );
+}
+
+// Sub-components
+interface DiagramActionsProps {
+  size?: "sm" | "default";
+  downloading: boolean;
+  copied: boolean;
+  canDownload: boolean;
+  onDownload: () => void;
+  onCopy: () => void;
+  onFullscreen?: () => void;
+}
+
+function DiagramActions({
+  size = "sm",
+  downloading,
+  copied,
+  canDownload,
+  onDownload,
+  onCopy,
+  onFullscreen,
+}: DiagramActionsProps) {
+  return (
+    <div className="flex items-center gap-2">
+      <Button
+        variant="outline"
+        size={size}
+        onClick={onDownload}
+        disabled={!canDownload || downloading}
+        className={cn(size === "sm" && "h-7 text-xs gap-1.5")}
+      >
+        {downloading ? (
+          <div className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+        ) : (
+          <Download className="w-3.5 h-3.5" />
+        )}
+        {downloading ? "Saving..." : "PNG"}
+      </Button>
+      <Button
+        variant="outline"
+        size={size}
+        onClick={onCopy}
+        className={cn(size === "sm" && "h-7 text-xs gap-1.5")}
+      >
+        {copied ? (
+          <Check className="w-3.5 h-3.5 text-green-500" />
+        ) : (
+          <Code className="w-3.5 h-3.5" />
+        )}
+        {copied ? "Copied" : "Code"}
+      </Button>
+      {onFullscreen && (
+        <Button
+          variant="outline"
+          size={size}
+          onClick={onFullscreen}
+          className={cn(size === "sm" && "h-7 text-xs gap-1.5")}
+        >
+          <Maximize2 className="w-3.5 h-3.5" />
+        </Button>
+      )}
+    </div>
+  );
+}
+
+interface MermaidViewProps {
+  svgData: { optimized: string; raw: string } | null;
+  isRendering: boolean;
+  isDark: boolean;
+  isFullscreen?: boolean;
+}
+
+function MermaidView({
+  svgData,
+  isRendering,
+  isDark,
+  isFullscreen = false,
+}: MermaidViewProps) {
+  return (
+    <div
+      className={cn(
+        "rounded-lg border border-border/50 overflow-hidden",
+        isDark ? "bg-zinc-950" : "bg-white",
+      )}
+    >
+      {svgData?.optimized && !isRendering ? (
+        <div
+          className={cn(
+            "w-full flex items-center justify-center p-4",
+            isFullscreen ? "min-h-[40vh]" : "min-h-75 max-h-125",
+          )}
+          dangerouslySetInnerHTML={{ __html: svgData.optimized }}
+        />
+      ) : (
+        <div
+          className={cn(
+            "flex items-center justify-center",
+            isFullscreen ? "min-h-[40vh]" : "min-h-75",
+          )}
+        >
+          <div className="flex flex-col items-center gap-3">
+            <div className="w-6 h-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+            <p className="text-sm text-muted-foreground">
+              Rendering diagram...
+            </p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+interface MermaidContentProps {
+  svgData: { optimized: string; raw: string } | null;
+  isRendering: boolean;
+  diagram: MermaidDiagram | null;
+  isDark: boolean;
+  downloading: boolean;
+  copied: boolean;
+  onDownload: () => void;
+  onCopy: () => void;
+  onFullscreen: () => void;
+}
+
+function MermaidContent({
+  svgData,
+  isRendering,
+  diagram,
+  isDark,
+  downloading,
+  copied,
+  onDownload,
+  onCopy,
+  onFullscreen,
+}: MermaidContentProps) {
+  return (
+    <div className="space-y-3">
+      <div className="flex justify-end">
+        <DiagramActions
+          downloading={downloading}
+          copied={copied}
+          canDownload={!!svgData?.raw}
+          onDownload={onDownload}
+          onCopy={onCopy}
+          onFullscreen={onFullscreen}
+        />
+      </div>
+      <MermaidView
+        svgData={svgData}
+        isRendering={isRendering}
+        isDark={isDark}
+      />
+      {diagram && (
+        <details className="group">
+          <summary className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer hover:text-foreground transition-colors">
+            <Code className="w-3.5 h-3.5" />
+            <span>View Mermaid Code</span>
+          </summary>
+          <pre className="mt-2 p-3 rounded-md bg-muted/50 border border-border/50 text-xs font-mono overflow-auto max-h-40">
+            {diagram.code}
+          </pre>
+        </details>
+      )}
+    </div>
+  );
+}
+
+interface VisualViewProps {
+  activeTypes: readonly ("source" | "process" | "store" | "output")[];
+  groupedNodes: Record<string, DataFlowNode[]>;
+  edges: DataFlowEdge[];
+  nodeMap: Map<string, DataFlowNode>;
+}
+
+function VisualView({
+  activeTypes,
+  groupedNodes,
+  edges,
+  nodeMap,
+}: VisualViewProps) {
+  return (
+    <div className="space-y-6">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+        {activeTypes.map((type, typeIndex) => {
+          const config = NODE_CONFIG[type];
+          const Icon = config.icon;
+          const typeNodes = groupedNodes[type];
+
+          return (
+            <motion.div
+              key={type}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: typeIndex * 0.05 }}
+              className="space-y-2"
+            >
+              <div className="flex items-center gap-2 pb-1.5 border-b border-border/40">
+                <Icon className="w-3.5 h-3.5 text-muted-foreground" />
+                <span className="text-xs font-semibold uppercase tracking-wider">
+                  {config.label}
+                </span>
+                <span className="text-[10px] text-muted-foreground/60 ml-auto">
+                  {typeNodes.length}
+                </span>
+              </div>
+
+              <div className="space-y-1.5">
+                {typeNodes.map((node) => (
+                  <div
+                    key={node.id}
+                    className="p-2.5 rounded-md border border-border/40 bg-muted/20 hover:bg-muted/30 transition-colors"
+                  >
+                    <h4 className="text-sm font-medium truncate">
+                      {node.name}
+                    </h4>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {node.description}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          );
+        })}
+      </div>
+
+      {edges.length > 0 && (
+        <div className="space-y-3 pt-4 border-t border-border/40">
+          <div className="flex items-center gap-2">
+            <LinkIcon className="w-3.5 h-3.5 text-muted-foreground" />
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Connections
+            </span>
+          </div>
+
+          <div className="grid gap-1.5 grid-cols-1 md:grid-cols-2">
+            {edges.map((edge) => {
+              const from = nodeMap.get(edge.from);
+              const to = nodeMap.get(edge.to);
+              if (!from || !to) return null;
+
+              return (
+                <div
+                  key={`${edge.from}-${edge.to}`}
+                  className="flex items-center gap-2 p-2 rounded-md bg-muted/10 hover:bg-muted/20 transition-colors text-xs"
+                >
+                  <span className="font-medium truncate">{from.name}</span>
+                  <ArrowRight className="w-3 h-3 text-muted-foreground/50 shrink-0" />
+                  <span className="font-medium truncate">{to.name}</span>
+                  {edge.label && (
+                    <span className="ml-auto text-[10px] text-muted-foreground/70 px-1.5 py-0.5 rounded bg-muted/50 truncate max-w-20">
+                      {edge.label}
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

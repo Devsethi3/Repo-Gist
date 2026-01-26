@@ -1,8 +1,9 @@
-// api/analyze/config.ts
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { EnvConfig } from "./types";
 
-export const MODEL_ID = "mistralai/devstral-2512:free";
+export const MODEL_ID = "xiaomi/mimo-v2-flash:free";
+// export const MODEL_ID = "mistralai/devstral-2512:free";
+// deepseek/deepseek-r1-0528:free
 
 export const AI_CONFIG = {
   temperature: 0.7,
@@ -10,8 +11,8 @@ export const AI_CONFIG = {
 } as const;
 
 export const RATE_LIMIT = {
-  WINDOW_MS: 60 * 1000, // 1 minute
-  MAX_REQUESTS: 10, // 10 requests per minute
+  WINDOW_MS: 60 * 1000,
+  MAX_REQUESTS: 10, 
 } as const;
 
 function validateEnvVariables(): EnvConfig {

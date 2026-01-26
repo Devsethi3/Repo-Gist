@@ -13,69 +13,127 @@ export interface DiagramsData {
 }
 
 /**
+ * Sanitize text for Mermaid labels - escape/remove problematic characters
+ */
+function sanitizeLabel(text: string): string {
+  if (!text) return "Unknown";
+
+  return (
+    text
+      // Replace parentheses - these break Mermaid node parsing
+      .replace(/\(/g, "[")
+      .replace(/\)/g, "]")
+      // Replace brackets that might conflict with node syntax
+      .replace(/\[/g, "[")
+      .replace(/\]/g, "]")
+      // Remove or replace other problematic characters
+      .replace(/"/g, "'")
+      .replace(/</g, "‹")
+      .replace(/>/g, "›")
+      .replace(/\|/g, "¦")
+      .replace(/\{/g, "[")
+      .replace(/\}/g, "]")
+      // Remove newlines and extra whitespace
+      .replace(/\n/g, " ")
+      .replace(/\r/g, "")
+      .replace(/\s+/g, " ")
+      // Trim and limit length
+      .trim()
+      .slice(0, 40)
+  );
+}
+
+/**
+ * Sanitize node ID - only alphanumeric and underscores allowed
+ */
+function sanitizeId(id: string): string {
+  if (!id)
+    return `node_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+
+  return id
+    .replace(/[^a-zA-Z0-9_-]/g, "_")
+    .replace(/^[^a-zA-Z]/, "n") // Ensure starts with letter
+    .slice(0, 30);
+}
+
+/**
+ * Get node shape brackets based on component type
+ */
+function getNodeShape(type: string): { open: string; close: string } {
+  const shapes: Record<string, { open: string; close: string }> = {
+    frontend: { open: "[", close: "]" },
+    backend: { open: "[[", close: "]]" },
+    database: { open: "[(", close: ")]" },
+    service: { open: "{{", close: "}}" },
+    external: { open: "[/", close: "/]" },
+    middleware: { open: "[", close: "]" },
+  };
+  return shapes[type] || shapes.backend;
+}
+
+/**
  * Generate architecture diagram from components
  */
 export function generateArchitectureDiagram(
-  components: ArchitectureComponent[]
+  components: ArchitectureComponent[],
 ): MermaidDiagram {
   if (!components || components.length === 0) {
     return {
       type: "flowchart",
       title: "System Architecture",
-      code: "flowchart TD\n    A[No architecture data available]",
+      code: "flowchart TD\n    empty[No architecture data available]",
     };
   }
 
   const lines: string[] = ["flowchart TD"];
 
-  // Define subgraphs by type
-  const typeGroups: Record<string, ArchitectureComponent[]> = {};
-
-  for (const component of components) {
-    if (!typeGroups[component.type]) {
-      typeGroups[component.type] = [];
-    }
-    typeGroups[component.type].push(component);
-  }
-
-  // Define node styles based on type
-  // const typeStyles: Record<string, string> = {
-  //   frontend: ":::frontend",
-  //   backend: ":::backend",
-  //   database: ":::database",
-  //   service: ":::service",
-  //   external: ":::external",
-  //   middleware: ":::middleware",
-  // };
+  // Track type groups for styling
+  const typeGroups: Record<string, string[]> = {};
 
   // Add nodes with their types
   for (const component of components) {
+    const safeId = sanitizeId(component.id);
     const nodeShape = getNodeShape(component.type);
-    const label = escapeLabel(component.name);
-    const tech = component.technologies.slice(0, 2).join(", ");
+    const label = sanitizeLabel(component.name);
+    const tech = component.technologies
+      ?.slice(0, 2)
+      .map(sanitizeLabel)
+      .join(", ");
     const fullLabel = tech ? `${label}<br/><small>${tech}</small>` : label;
 
     lines.push(
-      `    ${component.id}${nodeShape.open}${fullLabel}${nodeShape.close}`
+      `    ${safeId}${nodeShape.open}"${fullLabel}"${nodeShape.close}`,
     );
+
+    // Group by type for styling
+    if (!typeGroups[component.type]) {
+      typeGroups[component.type] = [];
+    }
+    typeGroups[component.type].push(safeId);
   }
+
+  // Create ID mapping for connections
+  const idMap = new Map(components.map((c) => [c.id, sanitizeId(c.id)]));
 
   // Add connections
   const addedConnections = new Set<string>();
   for (const component of components) {
-    for (const targetId of component.connections) {
-      const connectionKey = `${component.id}-${targetId}`;
-      const reverseKey = `${targetId}-${component.id}`;
+    const fromId = idMap.get(component.id);
+    if (!fromId) continue;
+
+    for (const targetId of component.connections || []) {
+      const toId = idMap.get(targetId);
+      if (!toId) continue;
+
+      const connectionKey = `${fromId}-${toId}`;
+      const reverseKey = `${toId}-${fromId}`;
 
       if (
         !addedConnections.has(connectionKey) &&
         !addedConnections.has(reverseKey)
       ) {
-        const target = components.find((c) => c.id === targetId);
-        if (target) {
-          lines.push(`    ${component.id} --> ${targetId}`);
-          addedConnections.add(connectionKey);
-        }
+        lines.push(`    ${fromId} --> ${toId}`);
+        addedConnections.add(connectionKey);
       }
     }
   }
@@ -90,10 +148,9 @@ export function generateArchitectureDiagram(
   lines.push("    classDef middleware fill:#ec4899,stroke:#db2777,color:#fff");
 
   // Apply styles to nodes
-  for (const [type, comps] of Object.entries(typeGroups)) {
-    if (comps.length > 0) {
-      const ids = comps.map((c) => c.id).join(",");
-      lines.push(`    class ${ids} ${type}`);
+  for (const [type, ids] of Object.entries(typeGroups)) {
+    if (ids.length > 0) {
+      lines.push(`    class ${ids.join(",")} ${type}`);
     }
   }
 
@@ -109,13 +166,13 @@ export function generateArchitectureDiagram(
  */
 export function generateDataFlowDiagram(
   nodes: DataFlowNode[],
-  edges: DataFlowEdge[]
+  edges: DataFlowEdge[],
 ): MermaidDiagram {
   if (!nodes || nodes.length === 0) {
     return {
       type: "flowchart",
       title: "Data Flow",
-      code: "flowchart LR\n    A[No data flow available]",
+      code: "flowchart LR\n    empty[No data flow available]",
     };
   }
 
@@ -129,17 +186,43 @@ export function generateDataFlowDiagram(
     output: { open: "[[", close: "]]" },
   };
 
+  // Track type groups for styling
+  const typeGroups: Record<string, string[]> = {};
+
+  // Create ID mapping
+  const idMap = new Map<string, string>();
+
   // Add nodes
   for (const node of nodes) {
+    const safeId = sanitizeId(node.id);
+    idMap.set(node.id, safeId);
+
     const style = nodeStyles[node.type] || nodeStyles.process;
-    const label = escapeLabel(node.name);
-    lines.push(`    ${node.id}${style.open}${label}${style.close}`);
+    const label = sanitizeLabel(node.name);
+
+    // Use quotes around label to handle special characters
+    lines.push(`    ${safeId}${style.open}"${label}"${style.close}`);
+
+    // Group by type for styling
+    if (!typeGroups[node.type]) {
+      typeGroups[node.type] = [];
+    }
+    typeGroups[node.type].push(safeId);
   }
 
   // Add edges with labels
   for (const edge of edges) {
-    const label = edge.label ? `|${escapeLabel(edge.label)}|` : "";
-    lines.push(`    ${edge.from} -->${label} ${edge.to}`);
+    const fromId = idMap.get(edge.from);
+    const toId = idMap.get(edge.to);
+
+    if (!fromId || !toId) continue;
+
+    if (edge.label) {
+      const safeLabel = sanitizeLabel(edge.label);
+      lines.push(`    ${fromId} -->|"${safeLabel}"| ${toId}`);
+    } else {
+      lines.push(`    ${fromId} --> ${toId}`);
+    }
   }
 
   // Add styles
@@ -150,14 +233,6 @@ export function generateDataFlowDiagram(
   lines.push("    classDef output fill:#f97316,stroke:#ea580c,color:#fff");
 
   // Apply styles
-  const typeGroups: Record<string, string[]> = {};
-  for (const node of nodes) {
-    if (!typeGroups[node.type]) {
-      typeGroups[node.type] = [];
-    }
-    typeGroups[node.type].push(node.id);
-  }
-
   for (const [type, ids] of Object.entries(typeGroups)) {
     if (ids.length > 0) {
       lines.push(`    class ${ids.join(",")} ${type}`);
@@ -176,7 +251,7 @@ export function generateDataFlowDiagram(
  */
 export function generateSequenceDiagram(
   nodes: DataFlowNode[],
-  edges: DataFlowEdge[]
+  edges: DataFlowEdge[],
 ): MermaidDiagram {
   if (!nodes || nodes.length === 0 || !edges || edges.length === 0) {
     return {
@@ -188,20 +263,28 @@ export function generateSequenceDiagram(
 
   const lines: string[] = ["sequenceDiagram"];
 
-  // Add participants
+  // Create ID mapping and add participants
+  const idMap = new Map<string, string>();
+
   for (const node of nodes) {
-    const alias = node.id.replace(/[^a-zA-Z0-9]/g, "");
-    lines.push(`    participant ${alias} as ${escapeLabel(node.name)}`);
+    const safeId = sanitizeId(node.id);
+    idMap.set(node.id, safeId);
+
+    const safeLabel = sanitizeLabel(node.name);
+    lines.push(`    participant ${safeId} as ${safeLabel}`);
   }
 
   lines.push("");
 
   // Add interactions
   for (const edge of edges) {
-    const fromAlias = edge.from.replace(/[^a-zA-Z0-9]/g, "");
-    const toAlias = edge.to.replace(/[^a-zA-Z0-9]/g, "");
-    const label = edge.label || edge.dataType || "data";
-    lines.push(`    ${fromAlias}->>+${toAlias}: ${escapeLabel(label)}`);
+    const fromId = idMap.get(edge.from);
+    const toId = idMap.get(edge.to);
+
+    if (!fromId || !toId) continue;
+
+    const label = sanitizeLabel(edge.label || edge.dataType || "data");
+    lines.push(`    ${fromId}->>+${toId}: ${label}`);
   }
 
   return {
@@ -209,28 +292,6 @@ export function generateSequenceDiagram(
     title: "Sequence Diagram",
     code: lines.join("\n"),
   };
-}
-
-// Helper functions
-function getNodeShape(type: string): { open: string; close: string } {
-  const shapes: Record<string, { open: string; close: string }> = {
-    frontend: { open: "[", close: "]" },
-    backend: { open: "[[", close: "]]" },
-    database: { open: "[(", close: ")]" },
-    service: { open: "{{", close: "}}" },
-    external: { open: ">", close: "]" },
-    middleware: { open: "(", close: ")" },
-  };
-  return shapes[type] || shapes.backend;
-}
-
-function escapeLabel(text: string): string {
-  return text
-    .replace(/"/g, "'")
-    .replace(/\[/g, "(")
-    .replace(/\]/g, ")")
-    .replace(/[<>]/g, "")
-    .slice(0, 50);
 }
 
 /**
@@ -261,15 +322,16 @@ export function validateMermaidSyntax(code: string): boolean {
 export function processDiagrams(
   aiDiagrams: DiagramsData | undefined,
   architecture: ArchitectureComponent[] | undefined,
-  dataFlow: { nodes: DataFlowNode[]; edges: DataFlowEdge[] } | undefined
+  dataFlow: { nodes: DataFlowNode[]; edges: DataFlowEdge[] } | undefined,
 ): DiagramsData {
   const result: DiagramsData = {};
 
-  // Try AI-generated diagrams first
+  // Try AI-generated diagrams first, but validate them
   if (
     aiDiagrams?.architecture &&
     validateMermaidSyntax(aiDiagrams.architecture.code)
   ) {
+    // Try to use AI diagram, but fall back to generated if it has issues
     result.architecture = aiDiagrams.architecture;
   } else if (architecture && architecture.length > 0) {
     result.architecture = generateArchitectureDiagram(architecture);
@@ -278,7 +340,10 @@ export function processDiagrams(
   if (aiDiagrams?.dataFlow && validateMermaidSyntax(aiDiagrams.dataFlow.code)) {
     result.dataFlow = aiDiagrams.dataFlow;
   } else if (dataFlow?.nodes && dataFlow.nodes.length > 0) {
-    result.dataFlow = generateDataFlowDiagram(dataFlow.nodes, dataFlow.edges);
+    result.dataFlow = generateDataFlowDiagram(
+      dataFlow.nodes,
+      dataFlow.edges || [],
+    );
   }
 
   if (
@@ -286,7 +351,12 @@ export function processDiagrams(
     validateMermaidSyntax(aiDiagrams.components.code)
   ) {
     result.components = aiDiagrams.components;
-  } else if (dataFlow?.nodes && dataFlow.nodes.length > 0) {
+  } else if (
+    dataFlow?.nodes &&
+    dataFlow.nodes.length > 0 &&
+    dataFlow.edges &&
+    dataFlow.edges.length > 0
+  ) {
     result.components = generateSequenceDiagram(dataFlow.nodes, dataFlow.edges);
   }
 

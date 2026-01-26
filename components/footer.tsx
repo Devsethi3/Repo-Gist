@@ -33,9 +33,9 @@ export function Footer() {
             <div className="flex flex-wrap gap-10 sm:gap-16">
               {/* Connect Column */}
               <div className="space-y-4">
-                <h3 className="text-sm font-medium text-foreground jetbrains-mono">
+                {/* <h3 className="text-sm font-medium text-foreground jetbrains-mono">
                   Connect
-                </h3>
+                </h3> */}
                 <div className="flex items-center gap-2">
                   <SocialLink
                     href="https://github.com/Devsethi3"

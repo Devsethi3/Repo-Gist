@@ -53,7 +53,7 @@ function processHistory(
     data: AnalysisResult;
     timestamp: number;
   }[],
-  now: number
+  now: number,
 ): RecentAnalysis[] {
   return rawHistory.map((item) => ({
     ...item,
@@ -104,7 +104,7 @@ export function RecentAnalyses({ onSelect, className }: RecentAnalysesProps) {
   const history = useSyncExternalStore(
     subscribe,
     getSnapshot,
-    getServerSnapshot
+    getServerSnapshot,
   );
 
   const handleRemove = useCallback(
@@ -113,7 +113,7 @@ export function RecentAnalyses({ onSelect, className }: RecentAnalysesProps) {
       e.preventDefault();
       removeFromHistory(repoFullName, branch);
     },
-    []
+    [],
   );
 
   const handleClearAll = useCallback(() => {
@@ -124,7 +124,7 @@ export function RecentAnalyses({ onSelect, className }: RecentAnalysesProps) {
     (repoFullName: string, branch?: string) => {
       onSelect(`https://github.com/${repoFullName}`, branch);
     },
-    [onSelect]
+    [onSelect],
   );
 
   if (history.length === 0) {
@@ -159,7 +159,7 @@ export function RecentAnalyses({ onSelect, className }: RecentAnalysesProps) {
                 variant="ghost"
                 size="sm"
                 onClick={handleClearAll}
-                className="h-7 px-2 text-xs text-muted-foreground hover:text-destructive"
+                className="text-xs cursor-pointer"
               >
                 <HugeiconsIcon
                   icon={Delete02Icon}
@@ -198,7 +198,7 @@ export function RecentAnalyses({ onSelect, className }: RecentAnalysesProps) {
                       daysUntilExpiry,
                       isExpiringSoon,
                     },
-                    index
+                    index,
                   ) => (
                     <motion.div
                       key={`${repoFullName}${branch ? `:${branch}` : ""}`}
@@ -218,7 +218,7 @@ export function RecentAnalyses({ onSelect, className }: RecentAnalysesProps) {
                           "h-full", // Ensure consistent height in grid
                           isExpiringSoon
                             ? "border-amber-500/30"
-                            : "border-border/50"
+                            : "border-border/50",
                         )}
                       >
                         {/* Expiry Badge */}
@@ -239,15 +239,15 @@ export function RecentAnalyses({ onSelect, className }: RecentAnalysesProps) {
                         <button
                           onClick={(e) => handleRemove(repoFullName, branch, e)}
                           className={cn(
-                            "absolute top-2 right-2 p-1.5 rounded-md z-10",
+                            "absolute top-2 right-2 p-1.5 cursor-pointer rounded-md z-10",
                             "opacity-0 group-hover:opacity-100",
-                            "hover:bg-destructive/10 transition-all"
+                            "hover:bg-accent transition-all",
                           )}
                           aria-label={`Remove ${repoFullName}`}
                         >
                           <HugeiconsIcon
                             icon={Delete01Icon}
-                            className="w-3.5 h-3.5 text-muted-foreground hover:text-destructive"
+                            className="w-3.5 h-3.5 text-muted-foreground"
                           />
                         </button>
 
@@ -255,7 +255,7 @@ export function RecentAnalyses({ onSelect, className }: RecentAnalysesProps) {
                         <div
                           className={cn(
                             "flex items-start gap-2.5 pr-6",
-                            isExpiringSoon && "mt-1"
+                            isExpiringSoon && "mt-1",
                           )}
                         >
                           {data.metadata?.owner?.avatarUrl ? (
@@ -335,7 +335,7 @@ export function RecentAnalyses({ onSelect, className }: RecentAnalysesProps) {
                         </div>
                       </div>
                     </motion.div>
-                  )
+                  ),
                 )}
               </AnimatePresence>
             </div>

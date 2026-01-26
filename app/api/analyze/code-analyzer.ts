@@ -1,599 +1,342 @@
-// api/analyze/code-analyzer.ts
 import { FileNode } from "@/lib/types";
 
 export interface CodeMetrics {
-  // Quantifiable metrics for accurate scoring
   hasTests: boolean;
   testFileCount: number;
-  testToCodeRatio: number;
-
   hasCI: boolean;
   ciProvider: string | null;
-  ciConfigPath: string | null;
-
   hasLinting: boolean;
-  lintConfig: string | null;
-
   hasTypeScript: boolean;
   strictMode: boolean;
-
   hasPrettier: boolean;
-  hasEditorConfig: boolean;
-
   hasSecurityConfig: boolean;
   hasEnvExample: boolean;
   exposedSecrets: string[];
-
-  hasDocs: boolean;
   hasChangelog: boolean;
   hasContributing: boolean;
   hasLicense: boolean;
   readmeQuality: "missing" | "minimal" | "basic" | "good" | "excellent";
-
   dependencyCount: number;
   devDependencyCount: number;
-  outdatedPatterns: string[];
   vulnerablePatterns: string[];
-
-  avgFileSize: number;
   largeFiles: string[];
-  deepNesting: string[];
-
   codePatterns: {
     hasErrorHandling: boolean;
     hasLogging: boolean;
     hasValidation: boolean;
-    hasAPIVersioning: boolean;
-    hasCaching: boolean;
-    hasRateLimiting: boolean;
   };
-
   missingEssentials: string[];
   existingAutomations: string[];
 }
 
-const TEST_PATTERNS = [
-  /\.(test|spec)\.(js|ts|jsx|tsx)$/,
-  /\/__tests__\//,
-  /\/test\//,
-  /\.test\./,
-  /_test\.(go|py|rb)$/,
-  /Test\.java$/,
+// Pre-compiled patterns
+const TEST_PATTERN =
+  /\.(test|spec)\.(js|ts|jsx|tsx)$|__tests__|_test\.(go|py)$/;
+const CI_PATTERNS: [RegExp, string][] = [
+  [/\.github\/workflows/, "GitHub Actions"],
+  [/\.gitlab-ci\.yml$/, "GitLab CI"],
+  [/Jenkinsfile$/, "Jenkins"],
 ];
-
-const CI_CONFIGS: Record<string, string> = {
-  ".github/workflows": "GitHub Actions",
-  ".gitlab-ci.yml": "GitLab CI",
-  ".circleci/config.yml": "CircleCI",
-  Jenkinsfile: "Jenkins",
-  ".travis.yml": "Travis CI",
-  "azure-pipelines.yml": "Azure Pipelines",
-  "bitbucket-pipelines.yml": "Bitbucket Pipelines",
-};
-
-const SECURITY_FILES = [
-  ".snyk",
-  "security.md",
-  "SECURITY.md",
-  ".github/SECURITY.md",
-  "renovate.json",
-  "dependabot.yml",
-  ".github/dependabot.yml",
-];
-
-const VULNERABLE_PATTERNS = [
-  {
-    pattern: /"moment"/,
-    suggestion:
-      "Consider migrating from moment.js to date-fns or dayjs (moment is deprecated)",
-  },
-  {
-    pattern: /"request"/,
-    suggestion:
-      'Replace deprecated "request" package with "node-fetch" or "axios"',
-  },
-  {
-    pattern: /"node-sass"/,
-    suggestion: "Migrate from node-sass to sass (dart-sass)",
-  },
-  {
-    pattern: /"tslint"/,
-    suggestion: "Migrate from TSLint to ESLint (TSLint is deprecated)",
-  },
-];
-
-const SECRET_PATTERNS = [
-  /API_KEY\s*=\s*['"][^'"]+['"]/,
-  /SECRET\s*=\s*['"][^'"]+['"]/,
-  /PASSWORD\s*=\s*['"][^'"]+['"]/,
-  /TOKEN\s*=\s*['"][^'"]+['"]/,
-  /PRIVATE_KEY\s*=\s*['"][^'"]+['"]/,
+const SECRET_PATTERN =
+  /(?:API_KEY|SECRET|PASSWORD|TOKEN)\s*=\s*['"]?[A-Za-z0-9+/=_-]{8,}/i;
+const VULNERABLE_DEPS: [RegExp, string][] = [
+  [/"moment"/, "moment.js → date-fns"],
+  [/"request"/, "request → axios"],
 ];
 
 export function analyzeCodeMetrics(
   tree: FileNode[],
   fileContents: Record<string, string>,
 ): CodeMetrics {
-  const allPaths = flattenPaths(tree);
-  const allFiles = allPaths.filter((p) => !p.endsWith("/"));
+  const paths = flattenPaths(tree);
 
-  // Test analysis
-  const testFiles = allFiles.filter((f) =>
-    TEST_PATTERNS.some((p) => p.test(f)),
-  );
-  const sourceFiles = allFiles.filter(
-    (f) =>
-      /\.(js|ts|jsx|tsx|py|go|java|rb|rs)$/.test(f) &&
-      !TEST_PATTERNS.some((p) => p.test(f)),
-  );
-
-  // CI detection
+  // Single-pass path analysis
+  let testFileCount = 0;
   let ciProvider: string | null = null;
-  let ciConfigPath: string | null = null;
-  for (const [path, provider] of Object.entries(CI_CONFIGS)) {
-    if (allPaths.some((p) => p.includes(path))) {
-      ciProvider = provider;
-      ciConfigPath = path;
-      break;
+  let hasSecurityConfig = false;
+  let hasEnvExample = false;
+  let hasChangelog = false;
+  let hasContributing = false;
+  let hasLicense = false;
+  let hasLinting = false;
+  let hasPrettier = false;
+
+  for (const path of paths) {
+    if (TEST_PATTERN.test(path)) testFileCount++;
+
+    if (!ciProvider) {
+      for (const [pattern, provider] of CI_PATTERNS) {
+        if (pattern.test(path)) {
+          ciProvider = provider;
+          break;
+        }
+      }
     }
+
+    if (/dependabot\.yml|\.snyk$/.test(path)) hasSecurityConfig = true;
+    if (/\.env\.example$/.test(path)) hasEnvExample = true;
+    if (/changelog\.md$/i.test(path)) hasChangelog = true;
+    if (/contributing\.md$/i.test(path)) hasContributing = true;
+    if (/^license/i.test(path)) hasLicense = true;
+    if (/\.eslintrc|eslint\.config|biome\.json/.test(path)) hasLinting = true;
+    if (/\.prettierrc/.test(path)) hasPrettier = true;
   }
 
   // Package.json analysis
-  const packageJson = fileContents["package.json"];
-  let parsedPkg: Record<string, unknown> = {};
+  const pkg = fileContents["package.json"];
   let deps: Record<string, string> = {};
   let devDeps: Record<string, string> = {};
 
-  if (packageJson) {
+  if (pkg) {
     try {
-      parsedPkg = JSON.parse(packageJson);
-      deps = (parsedPkg.dependencies as Record<string, string>) || {};
-      devDeps = (parsedPkg.devDependencies as Record<string, string>) || {};
+      const parsed = JSON.parse(pkg);
+      deps = parsed.dependencies || {};
+      devDeps = parsed.devDependencies || {};
+      if (!hasLinting) hasLinting = !!devDeps["eslint"] || !!devDeps["biome"];
+      if (!hasPrettier) hasPrettier = !!devDeps["prettier"];
     } catch {}
   }
 
-  // TypeScript analysis
+  // TypeScript check
   const tsConfig = fileContents["tsconfig.json"];
+  const hasTypeScript = paths.some((p) => /\.tsx?$/.test(p));
   let strictMode = false;
   if (tsConfig) {
     try {
-      const parsed = JSON.parse(tsConfig);
-      strictMode = parsed?.compilerOptions?.strict === true;
+      strictMode = JSON.parse(tsConfig)?.compilerOptions?.strict === true;
     } catch {}
   }
 
-  // README quality assessment
+  // README quality
   const readme = fileContents["README.md"] || fileContents["readme.md"] || "";
-  const readmeQuality = assessReadmeQuality(readme);
+  const readmeQuality = assessReadme(readme);
 
-  // Exposed secrets check
+  // Quick content analysis
   const exposedSecrets: string[] = [];
-  for (const [file, content] of Object.entries(fileContents)) {
-    if (file.includes(".env") && !file.includes(".example")) continue;
-    for (const pattern of SECRET_PATTERNS) {
-      if (pattern.test(content)) {
-        exposedSecrets.push(`Potential secret in ${file}`);
-      }
-    }
-  }
-
-  // Vulnerable dependencies
-  const outdatedPatterns: string[] = [];
-  const vulnerablePatterns: string[] = [];
-  if (packageJson) {
-    for (const { pattern, suggestion } of VULNERABLE_PATTERNS) {
-      if (pattern.test(packageJson)) {
-        vulnerablePatterns.push(suggestion);
-      }
-    }
-  }
-
-  // Code pattern detection
-  const allCode = Object.values(fileContents).join("\n");
-  const codePatterns = {
-    hasErrorHandling: /try\s*\{|\.catch\(|catch\s*\(/.test(allCode),
-    hasLogging: /console\.(log|error|warn)|logger\.|winston|pino|bunyan/.test(
-      allCode,
-    ),
-    hasValidation: /zod|yup|joi|validator|class-validator|ajv/.test(allCode),
-    hasAPIVersioning: /\/v[0-9]+\/|\/api\/v[0-9]+/.test(allCode),
-    hasCaching: /redis|memcached|cache|lru-cache/.test(allCode),
-    hasRateLimiting: /rate-limit|ratelimit|throttle/.test(allCode),
-  };
-
-  // Large files detection
   const largeFiles: string[] = [];
+  let hasErrorHandling = false;
+  let hasLogging = false;
+  let hasValidation = false;
+
   for (const [file, content] of Object.entries(fileContents)) {
-    if (content.length > 10000) {
-      largeFiles.push(`${file} (${Math.round(content.length / 1000)}KB)`);
+    if (content.length > 10000) largeFiles.push(file);
+    if (!file.endsWith(".example") && SECRET_PATTERN.test(content)) {
+      exposedSecrets.push(file);
     }
+    if (!hasErrorHandling && /try\s*\{|\.catch\(/.test(content))
+      hasErrorHandling = true;
+    if (!hasLogging && /console\.|logger\.|winston|pino/.test(content))
+      hasLogging = true;
+    if (!hasValidation && /zod|yup|joi|validator/.test(content))
+      hasValidation = true;
   }
 
-  // Deep nesting detection
-  const deepNesting = allFiles.filter((f) => f.split("/").length > 6);
+  // Vulnerable deps
+  const vulnerablePatterns: string[] = [];
+  if (pkg) {
+    for (const [pattern, msg] of VULNERABLE_DEPS) {
+      if (pattern.test(pkg)) vulnerablePatterns.push(msg);
+    }
+  }
 
   // Missing essentials
   const missingEssentials: string[] = [];
-  if (!allPaths.some((p) => /readme\.md$/i.test(p)))
+  if (!paths.some((p) => /readme\.md$/i.test(p)))
     missingEssentials.push("README.md");
-  if (!allPaths.some((p) => /license/i.test(p)))
-    missingEssentials.push("LICENSE");
-  if (!allPaths.some((p) => /\.gitignore$/.test(p)))
-    missingEssentials.push(".gitignore");
-  if (
-    !allPaths.some((p) => /\.env\.example$/.test(p)) &&
-    allPaths.some((p) => /\.env$/.test(p))
-  ) {
+  if (!hasLicense) missingEssentials.push("LICENSE");
+  if (!hasEnvExample && paths.some((p) => /\.env$/.test(p)))
     missingEssentials.push(".env.example");
-  }
 
   // Existing automations
   const existingAutomations: string[] = [];
-  if (ciProvider) existingAutomations.push(`${ciProvider} CI/CD`);
-  if (allPaths.some((p) => /dependabot\.yml/.test(p)))
-    existingAutomations.push("Dependabot");
-  if (allPaths.some((p) => /renovate\.json/.test(p)))
-    existingAutomations.push("Renovate");
-  if (allPaths.some((p) => /codecov\.yml/.test(p)))
-    existingAutomations.push("Codecov");
-  if (allPaths.some((p) => /\.husky\//.test(p)))
-    existingAutomations.push("Husky hooks");
-  if (devDeps["lint-staged"]) existingAutomations.push("lint-staged");
+  if (ciProvider) existingAutomations.push(ciProvider);
+  if (hasSecurityConfig) existingAutomations.push("Dependabot");
+  if (paths.some((p) => /\.husky\//.test(p))) existingAutomations.push("Husky");
 
   return {
-    hasTests: testFiles.length > 0,
-    testFileCount: testFiles.length,
-    testToCodeRatio:
-      sourceFiles.length > 0 ? testFiles.length / sourceFiles.length : 0,
-
-    hasCI: ciProvider !== null,
+    hasTests: testFileCount > 0,
+    testFileCount,
+    hasCI: !!ciProvider,
     ciProvider,
-    ciConfigPath,
-
-    hasLinting: !!(
-      devDeps["eslint"] ||
-      devDeps["biome"] ||
-      allPaths.some((p) => /\.eslintrc/.test(p))
-    ),
-    lintConfig: allPaths.find((p) => /\.eslintrc|biome\.json/.test(p)) || null,
-
-    hasTypeScript: allPaths.some((p) => /\.tsx?$/.test(p)),
+    hasLinting,
+    hasTypeScript,
     strictMode,
-
-    hasPrettier: !!(
-      devDeps["prettier"] || allPaths.some((p) => /\.prettierrc/.test(p))
-    ),
-    hasEditorConfig: allPaths.some((p) => /\.editorconfig$/.test(p)),
-
-    hasSecurityConfig: SECURITY_FILES.some((f) =>
-      allPaths.some((p) => p.includes(f)),
-    ),
-    hasEnvExample: allPaths.some((p) => /\.env\.example$/.test(p)),
+    hasPrettier,
+    hasSecurityConfig,
+    hasEnvExample,
     exposedSecrets,
-
-    hasDocs: allPaths.some((p) => /^docs?\//i.test(p)),
-    hasChangelog: allPaths.some((p) => /changelog\.md$/i.test(p)),
-    hasContributing: allPaths.some((p) => /contributing\.md$/i.test(p)),
-    hasLicense: allPaths.some((p) => /^license/i.test(p)),
+    hasChangelog,
+    hasContributing,
+    hasLicense,
     readmeQuality,
-
     dependencyCount: Object.keys(deps).length,
     devDependencyCount: Object.keys(devDeps).length,
-    outdatedPatterns,
     vulnerablePatterns,
-
-    avgFileSize: calculateAvgFileSize(fileContents),
     largeFiles,
-    deepNesting,
-
-    codePatterns,
+    codePatterns: { hasErrorHandling, hasLogging, hasValidation },
     missingEssentials,
     existingAutomations,
   };
 }
 
-function flattenPaths(tree: FileNode[], prefix = ""): string[] {
+function flattenPaths(tree: FileNode[]): string[] {
   const paths: string[] = [];
-  for (const node of tree) {
-    const fullPath = prefix ? `${prefix}/${node.name}` : node.name;
-    paths.push(fullPath);
-    if (node.children) {
-      paths.push(...flattenPaths(node.children, fullPath));
-    }
+  const stack = [...tree];
+  while (stack.length) {
+    const node = stack.pop()!;
+    paths.push(node.path);
+    if (node.children) stack.push(...node.children);
   }
   return paths;
 }
 
-function assessReadmeQuality(
+function assessReadme(
   readme: string,
 ): "missing" | "minimal" | "basic" | "good" | "excellent" {
-  if (!readme || readme.length < 50) return "missing";
-  if (readme.length < 200) return "minimal";
-
-  const hasInstallation = /install|getting started|setup/i.test(readme);
-  const hasUsage = /usage|example|how to/i.test(readme);
-  const hasAPI = /api|reference|documentation/i.test(readme);
-  const hasBadges = /\[!\[/.test(readme);
-  const hasContributing = /contribut/i.test(readme);
-  const hasLicense = /license/i.test(readme);
-  const hasCodeBlocks = /```/.test(readme);
-
-  const score = [
-    hasInstallation,
-    hasUsage,
-    hasAPI,
-    hasBadges,
-    hasContributing,
-    hasLicense,
-    hasCodeBlocks,
-  ].filter(Boolean).length;
-
-  if (score >= 5) return "excellent";
-  if (score >= 3) return "good";
-  if (score >= 1) return "basic";
-  return "minimal";
+  if (readme.length < 100) return "missing";
+  if (readme.length < 300) return "minimal";
+  let score = 0;
+  if (/install|setup/i.test(readme)) score++;
+  if (/usage|example/i.test(readme)) score++;
+  if (/```/.test(readme)) score++;
+  if (score >= 3) return "excellent";
+  if (score >= 2) return "good";
+  return "basic";
 }
 
-function calculateAvgFileSize(contents: Record<string, string>): number {
-  const sizes = Object.values(contents).map((c) => c.length);
-  if (sizes.length === 0) return 0;
-  return Math.round(sizes.reduce((a, b) => a + b, 0) / sizes.length);
-}
-
-export function calculateScores(metrics: CodeMetrics): {
-  overall: number;
-  codeQuality: number;
-  documentation: number;
-  security: number;
-  maintainability: number;
-  testCoverage: number;
-  dependencies: number;
-  breakdown: Record<string, { score: number; factors: string[] }>;
-} {
+export function calculateScores(metrics: CodeMetrics) {
   const breakdown: Record<string, { score: number; factors: string[] }> = {};
 
-  // Code Quality (0-100)
-  let codeQuality = 50;
-  const codeFactors: string[] = [];
-
+  // Code Quality (simplified)
+  let cq = 50;
+  const cqf: string[] = [];
   if (metrics.hasTypeScript) {
-    codeQuality += 15;
-    codeFactors.push("+15: TypeScript");
+    cq += 20;
+    cqf.push("+20: TypeScript");
   }
   if (metrics.strictMode) {
-    codeQuality += 10;
-    codeFactors.push("+10: Strict mode enabled");
+    cq += 10;
+    cqf.push("+10: Strict");
   }
   if (metrics.hasLinting) {
-    codeQuality += 10;
-    codeFactors.push("+10: Linting configured");
+    cq += 10;
+    cqf.push("+10: Linting");
   }
   if (metrics.hasPrettier) {
-    codeQuality += 5;
-    codeFactors.push("+5: Prettier configured");
-  }
-  if (metrics.hasEditorConfig) {
-    codeQuality += 3;
-    codeFactors.push("+3: EditorConfig present");
+    cq += 5;
+    cqf.push("+5: Prettier");
   }
   if (metrics.codePatterns.hasErrorHandling) {
-    codeQuality += 5;
-    codeFactors.push("+5: Error handling detected");
+    cq += 5;
+    cqf.push("+5: Error handling");
   }
-  if (metrics.codePatterns.hasValidation) {
-    codeQuality += 5;
-    codeFactors.push("+5: Input validation present");
-  }
-  if (metrics.largeFiles.length > 3) {
-    codeQuality -= 10;
-    codeFactors.push("-10: Multiple large files");
-  }
-  if (metrics.deepNesting.length > 5) {
-    codeQuality -= 5;
-    codeFactors.push("-5: Deep directory nesting");
-  }
+  breakdown.codeQuality = { score: Math.min(100, cq), factors: cqf };
 
-  codeQuality = Math.max(0, Math.min(100, codeQuality));
-  breakdown.codeQuality = { score: codeQuality, factors: codeFactors };
-
-  // Documentation (0-100)
-  let documentation = 30;
-  const docFactors: string[] = [];
-
-  const readmeScores = {
+  // Documentation
+  let doc = 30;
+  const docf: string[] = [];
+  const rmScore = {
     missing: 0,
     minimal: 10,
     basic: 25,
     good: 40,
     excellent: 50,
   };
-  documentation += readmeScores[metrics.readmeQuality];
-  docFactors.push(
-    `+${readmeScores[metrics.readmeQuality]}: README is ${metrics.readmeQuality}`,
-  );
-
+  doc += rmScore[metrics.readmeQuality];
+  docf.push(`README: ${metrics.readmeQuality}`);
   if (metrics.hasChangelog) {
-    documentation += 10;
-    docFactors.push("+10: CHANGELOG present");
-  }
-  if (metrics.hasContributing) {
-    documentation += 10;
-    docFactors.push("+10: CONTRIBUTING guide");
-  }
-  if (metrics.hasDocs) {
-    documentation += 15;
-    docFactors.push("+15: Docs directory");
+    doc += 10;
+    docf.push("+10: CHANGELOG");
   }
   if (!metrics.hasLicense) {
-    documentation -= 15;
-    docFactors.push("-15: No LICENSE file");
+    doc -= 15;
+    docf.push("-15: No LICENSE");
   }
+  breakdown.documentation = {
+    score: Math.max(0, Math.min(100, doc)),
+    factors: docf,
+  };
 
-  documentation = Math.max(0, Math.min(100, documentation));
-  breakdown.documentation = { score: documentation, factors: docFactors };
-
-  // Security (0-100)
-  let security = 60;
-  const securityFactors: string[] = [];
-
+  // Security
+  let sec = 70;
+  const secf: string[] = [];
   if (metrics.hasSecurityConfig) {
-    security += 15;
-    securityFactors.push("+15: Security tooling configured");
-  }
-  if (metrics.hasEnvExample) {
-    security += 10;
-    securityFactors.push("+10: .env.example present");
+    sec += 15;
+    secf.push("+15: Security config");
   }
   if (metrics.exposedSecrets.length > 0) {
-    security -= 30;
-    securityFactors.push(
-      `-30: ${metrics.exposedSecrets.length} potential secret(s) exposed`,
-    );
+    sec -= 30;
+    secf.push("-30: Secrets exposed");
   }
   if (metrics.vulnerablePatterns.length > 0) {
-    security -= 10 * metrics.vulnerablePatterns.length;
-    securityFactors.push(
-      `-${10 * metrics.vulnerablePatterns.length}: Deprecated/vulnerable dependencies`,
-    );
+    sec -= 15;
+    secf.push("-15: Deprecated deps");
   }
-  if (metrics.codePatterns.hasRateLimiting) {
-    security += 10;
-    securityFactors.push("+10: Rate limiting detected");
-  }
-  if (metrics.codePatterns.hasValidation) {
-    security += 5;
-    securityFactors.push("+5: Input validation");
-  }
+  breakdown.security = {
+    score: Math.max(0, Math.min(100, sec)),
+    factors: secf,
+  };
 
-  security = Math.max(0, Math.min(100, security));
-  breakdown.security = { score: security, factors: securityFactors };
-
-  // Maintainability (0-100)
-  let maintainability = 50;
-  const maintainFactors: string[] = [];
-
+  // Maintainability
+  let maint = 50;
+  const mf: string[] = [];
   if (metrics.hasCI) {
-    maintainability += 20;
-    maintainFactors.push(`+20: CI/CD with ${metrics.ciProvider}`);
+    maint += 25;
+    mf.push(`+25: ${metrics.ciProvider}`);
   }
   if (metrics.hasTypeScript) {
-    maintainability += 10;
-    maintainFactors.push("+10: Type safety");
+    maint += 15;
+    mf.push("+15: Types");
   }
   if (metrics.hasLinting) {
-    maintainability += 10;
-    maintainFactors.push("+10: Linting enforced");
+    maint += 10;
+    mf.push("+10: Linting");
   }
-  if (metrics.existingAutomations.length > 2) {
-    maintainability += 10;
-    maintainFactors.push("+10: Multiple automations");
+  breakdown.maintainability = { score: Math.min(100, maint), factors: mf };
+
+  // Test Coverage
+  let test = 20;
+  const tf: string[] = [];
+  if (metrics.hasTests) {
+    test += 50;
+    tf.push("+50: Tests exist");
   }
-  if (metrics.largeFiles.length > 5) {
-    maintainability -= 15;
-    maintainFactors.push("-15: Too many large files");
+  if (metrics.hasCI) {
+    test += 10;
+    tf.push("+10: CI");
+  }
+  breakdown.testCoverage = { score: Math.min(100, test), factors: tf };
+
+  // Dependencies
+  let dep = 80;
+  const df: string[] = [];
+  if (metrics.vulnerablePatterns.length > 0) {
+    dep -= 20;
+    df.push("-20: Deprecated");
   }
   if (metrics.dependencyCount > 50) {
-    maintainability -= 10;
-    maintainFactors.push("-10: Heavy dependencies");
+    dep -= 10;
+    df.push("-10: Heavy");
   }
-
-  maintainability = Math.max(0, Math.min(100, maintainability));
-  breakdown.maintainability = {
-    score: maintainability,
-    factors: maintainFactors,
-  };
-
-  // Test Coverage (0-100)
-  let testCoverage = 20;
-  const testFactors: string[] = [];
-
-  if (metrics.hasTests) {
-    testCoverage += 30;
-    testFactors.push("+30: Tests present");
-
-    if (metrics.testToCodeRatio >= 0.5) {
-      testCoverage += 30;
-      testFactors.push("+30: Good test-to-code ratio");
-    } else if (metrics.testToCodeRatio >= 0.2) {
-      testCoverage += 15;
-      testFactors.push("+15: Moderate test coverage");
-    } else {
-      testFactors.push("+0: Low test-to-code ratio");
-    }
-
-    if (metrics.testFileCount > 10) {
-      testCoverage += 10;
-      testFactors.push("+10: Many test files");
-    }
-  } else {
-    testFactors.push("+0: No tests detected");
-  }
-
-  if (metrics.hasCI) {
-    testCoverage += 10;
-    testFactors.push("+10: CI can run tests");
-  }
-
-  testCoverage = Math.max(0, Math.min(100, testCoverage));
-  breakdown.testCoverage = { score: testCoverage, factors: testFactors };
-
-  // Dependencies (0-100)
-  let dependencies = 70;
-  const depFactors: string[] = [];
-
-  if (metrics.vulnerablePatterns.length === 0) {
-    dependencies += 15;
-    depFactors.push("+15: No deprecated packages detected");
-  } else {
-    dependencies -= 10 * metrics.vulnerablePatterns.length;
-    depFactors.push(
-      `-${10 * metrics.vulnerablePatterns.length}: Deprecated packages found`,
-    );
-  }
-
-  if (metrics.hasSecurityConfig) {
-    dependencies += 10;
-    depFactors.push("+10: Dependency monitoring");
-  }
-  if (metrics.dependencyCount < 30) {
-    dependencies += 5;
-    depFactors.push("+5: Reasonable dependency count");
-  }
-  if (metrics.dependencyCount > 80) {
-    dependencies -= 15;
-    depFactors.push("-15: Very heavy dependencies");
-  }
-
-  dependencies = Math.max(0, Math.min(100, dependencies));
-  breakdown.dependencies = { score: dependencies, factors: depFactors };
-
-  // Overall: weighted average
-  const weights = {
-    codeQuality: 0.2,
-    documentation: 0.15,
-    security: 0.2,
-    maintainability: 0.2,
-    testCoverage: 0.15,
-    dependencies: 0.1,
-  };
+  breakdown.dependencies = { score: Math.max(0, dep), factors: df };
 
   const overall = Math.round(
-    codeQuality * weights.codeQuality +
-      documentation * weights.documentation +
-      security * weights.security +
-      maintainability * weights.maintainability +
-      testCoverage * weights.testCoverage +
-      dependencies * weights.dependencies,
+    breakdown.codeQuality.score * 0.2 +
+      breakdown.documentation.score * 0.15 +
+      breakdown.security.score * 0.2 +
+      breakdown.maintainability.score * 0.2 +
+      breakdown.testCoverage.score * 0.15 +
+      breakdown.dependencies.score * 0.1,
   );
 
   return {
     overall,
-    codeQuality,
-    documentation,
-    security,
-    maintainability,
-    testCoverage,
-    dependencies,
+    codeQuality: breakdown.codeQuality.score,
+    documentation: breakdown.documentation.score,
+    security: breakdown.security.score,
+    maintainability: breakdown.maintainability.score,
+    testCoverage: breakdown.testCoverage.score,
+    dependencies: breakdown.dependencies.score,
     breakdown,
   };
 }

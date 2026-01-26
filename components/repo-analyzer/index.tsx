@@ -1,4 +1,3 @@
-// components/repo-analyzer/index.tsx
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
@@ -41,7 +40,7 @@ import { SectionHeader } from "./section-header";
 import { TabTriggerItem } from "./tab-trigger-item";
 import { EmptyState } from "./empty-state";
 import Testimonials from "../testimonial/testimonial";
-import { PRSuggestionsPanel } from "../pr-suggestions-panel";
+// import { PRSuggestionsPanel } from "../pr-suggestions-panel";
 
 export function RepoAnalyzer() {
   const {
@@ -280,25 +279,6 @@ ${insight.affectedFiles.map((f) => `- \`${f}\``).join("\n")}`
                 />
               </motion.section>
 
-              {/* File Tree */}
-              {result.fileTree && result.fileStats && (
-                <motion.section
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3, delay: 0.1 }}
-                  className="w-full"
-                >
-                  <SectionHeader title="Repository Structure" />
-                  <div className="mt-4">
-                    <FileTree
-                      tree={result.fileTree}
-                      stats={result.fileStats}
-                      branch={result.branch || currentBranch}
-                    />
-                  </div>
-                </motion.section>
-              )}
-
               {/* Score Card + AI Insights */}
               <motion.section
                 initial={{ opacity: 0, y: 12 }}
@@ -311,27 +291,6 @@ ${insight.affectedFiles.map((f) => `- \`${f}\``).join("\n")}`
                   {result.scores && <ScoreCard scores={result.scores} />}
                   {result.insights && result.insights.length > 0 && (
                     <AIInsights insights={result.insights} />
-                  )}
-                </div>
-              </motion.section>
-
-              {/* Architecture Diagram */}
-              <motion.section
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: 0.2 }}
-                className="w-full"
-              >
-                <SectionHeader title="Architecture" icon={GitBranchIcon} />
-                <div className="mt-4">
-                  {result.architecture && result.architecture.length > 0 ? (
-                    <ArchitectureDiagram components={result.architecture} />
-                  ) : (
-                    <EmptyState
-                      icon={GitBranchIcon}
-                      title="No Architecture Data"
-                      description="Architecture visualization is not available for this repository."
-                    />
                   )}
                 </div>
               </motion.section>
@@ -361,6 +320,46 @@ ${insight.affectedFiles.map((f) => `- \`${f}\``).join("\n")}`
                 </div>
               </motion.section>
 
+              {/* File Tree */}
+              {result.fileTree && result.fileStats && (
+                <motion.section
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: 0.1 }}
+                  className="w-full"
+                >
+                  <SectionHeader title="Repository Structure" />
+                  <div className="mt-4">
+                    <FileTree
+                      tree={result.fileTree}
+                      stats={result.fileStats}
+                      branch={result.branch || currentBranch}
+                    />
+                  </div>
+                </motion.section>
+              )}
+
+              {/* Architecture Diagram */}
+              <motion.section
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: 0.2 }}
+                className="w-full"
+              >
+                <SectionHeader title="Architecture" icon={GitBranchIcon} />
+                <div className="mt-4">
+                  {result.architecture && result.architecture.length > 0 ? (
+                    <ArchitectureDiagram components={result.architecture} />
+                  ) : (
+                    <EmptyState
+                      icon={GitBranchIcon}
+                      title="No Architecture Data"
+                      description="Architecture visualization is not available for this repository."
+                    />
+                  )}
+                </div>
+              </motion.section>
+
               {/* Refactors, Automations & Issues Tabs */}
               <motion.section
                 initial={{ opacity: 0, y: 12 }}
@@ -371,11 +370,23 @@ ${insight.affectedFiles.map((f) => `- \`${f}\``).join("\n")}`
                 <SectionHeader title="Recommendations & Actions" />
 
                 <div className="mt-4">
-                  <Tabs defaultValue="refactors" className="w-full">
+                  <Tabs defaultValue="issues" className="w-full">
                     <ScrollArea className="w-full pb-1">
                       <TabsList
                         className={cn("inline-flex h-10 sm:h-11 p-1 gap-1")}
                       >
+                        <TabTriggerItem
+                          value="issues"
+                          icon={Bug01Icon}
+                          label="Issues"
+                          count={suggestedIssues.length}
+                        />
+                        <TabTriggerItem
+                          value="automations"
+                          icon={ZapIcon}
+                          label="Automations"
+                          count={result.automations?.length}
+                        />
                         <TabTriggerItem
                           value="refactors"
                           icon={Wrench01Icon}
@@ -390,24 +401,13 @@ ${insight.affectedFiles.map((f) => `- \`${f}\``).join("\n")}`
                             ).length
                           }
                         />
-                        <TabTriggerItem
-                          value="automations"
-                          icon={ZapIcon}
-                          label="Automations"
-                          count={result.automations?.length}
-                        />
-                        <TabTriggerItem
-                          value="issues"
-                          icon={Bug01Icon}
-                          label="Issues"
-                          count={suggestedIssues.length}
-                        />
-                        <TabTriggerItem
+
+                        {/* <TabTriggerItem
                           value="pull-requests"
                           icon={GitPullRequestIcon}
                           label="PRs"
                           count={result.pullRequests?.length}
-                        />
+                        /> */}
                       </TabsList>
                       <ScrollBar
                         orientation="horizontal"
@@ -470,7 +470,7 @@ ${insight.affectedFiles.map((f) => `- \`${f}\``).join("\n")}`
                         />
                       </motion.div>
                     </TabsContent>
-                    <TabsContent
+                    {/* <TabsContent
                       value="pull-requests"
                       className="mt-4 sm:mt-6 focus-visible:outline-none"
                     >
@@ -493,7 +493,7 @@ ${insight.affectedFiles.map((f) => `- \`${f}\``).join("\n")}`
                           />
                         )}
                       </motion.div>
-                    </TabsContent>
+                    </TabsContent> */}
                   </Tabs>
                 </div>
               </motion.section>

@@ -1,4 +1,3 @@
-// api/analyze/route.ts
 import { streamText } from "ai";
 import {
   fetchRepoMetadata,
@@ -22,8 +21,9 @@ import { createAnalysisStream, getStreamHeaders } from "./stream-handler";
 import { analyzeCodeMetrics, calculateScores } from "./code-analyzer";
 import { generateAutomations } from "./automation-generator";
 import { generateRefactors } from "./refactor-generator";
-import { generatePRSuggestions } from "./pr-generator";
 import { HealthCheckResponse, ErrorResponse } from "./types";
+
+const MAX_BODY_SIZE = 10 * 1024;
 
 export async function POST(request: Request) {
   if (!isConfigured()) {
@@ -46,8 +46,26 @@ export async function POST(request: Request) {
   }
 
   try {
-    const body = await request.json().catch(() => null);
-    if (!body) {
+    const contentLength = request.headers.get("content-length");
+    if (contentLength && parseInt(contentLength) > MAX_BODY_SIZE) {
+      return Response.json(
+        { error: "Request body too large" } satisfies ErrorResponse,
+        { status: 413 },
+      );
+    }
+
+    const rawBody = await request.text();
+    if (rawBody.length > MAX_BODY_SIZE) {
+      return Response.json(
+        { error: "Request body too large" } satisfies ErrorResponse,
+        { status: 413 },
+      );
+    }
+
+    let body;
+    try {
+      body = JSON.parse(rawBody);
+    } catch {
       return Response.json(
         { error: "Invalid JSON in request body" } satisfies ErrorResponse,
         { status: 400 },
@@ -59,46 +77,36 @@ export async function POST(request: Request) {
     const openrouter = getOpenRouterClient();
     const model = openrouter.chat(MODEL_ID);
 
-    // Fetch all data in parallel
     const metadata = await fetchRepoMetadata(owner, repo);
     const targetBranch = parsedBody.branch || metadata.defaultBranch;
 
+    // Parallel fetch
     const [tree, importantFiles, branches] = await Promise.all([
       fetchRepoTree(owner, repo, targetBranch),
       fetchImportantFiles(owner, repo, targetBranch),
       fetchRepoBranches(owner, repo, metadata.defaultBranch),
     ]);
 
-    // Compute metrics and scores BEFORE calling AI
+    // Fast metrics computation
     const codeMetrics = analyzeCodeMetrics(tree, importantFiles);
     const calculatedScores = calculateScores(codeMetrics);
 
-    // Generate automations based on actual metrics (not AI)
+    // Generate only essential suggestions (no PR generation)
     const generatedAutomations = generateAutomations(
       codeMetrics,
       metadata.name,
       metadata.language,
     );
-
-    // Generate refactors based on actual metrics (not AI)
     const generatedRefactors = generateRefactors(
       codeMetrics,
       metadata.name,
       metadata.language,
     );
 
-    const generatedPRs = generatePRSuggestions(
-      codeMetrics,
-      metadata.name,
-      metadata.language,
-      metadata.defaultBranch,
-    );
-
     const fileStats = calculateFileStats(tree);
-    const compactTree = createCompactTreeString(tree, 50);
-    const filesContent = prepareFilesContent(importantFiles);
+    const compactTree = createCompactTreeString(tree, 40); // Reduced from 50
+    const filesContent = prepareFilesContent(importantFiles, 6, 2500); // Reduced limits
 
-    // Build prompt with metrics context
     const prompt = buildPrompt(
       { metadata, fileStats, compactTree, filesContent, branch: targetBranch },
       codeMetrics,
@@ -108,11 +116,10 @@ export async function POST(request: Request) {
     const result = await streamText({
       model,
       prompt,
-      temperature: 0.5,
-      maxOutputTokens: AI_CONFIG.maxOutputTokens,
+      temperature: 0.4, // Lower for faster, more consistent output
+      maxOutputTokens: 3000, // Reduced from 4000
     });
 
-    // Pass pre-computed data to stream handler
     const stream = createAnalysisStream(
       metadata,
       tree,
@@ -124,7 +131,6 @@ export async function POST(request: Request) {
         scores: calculatedScores,
         automations: generatedAutomations,
         refactors: generatedRefactors,
-        pullRequests: generatedPRs,
         metrics: codeMetrics,
       },
     );
@@ -134,7 +140,17 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error("Analysis error:", error);
-    const message = error instanceof Error ? error.message : "Analysis failed";
+    const isOperational =
+      error instanceof Error &&
+      (error.message.includes("not found") ||
+        error.message.includes("rate limit") ||
+        error.message.includes("Invalid"));
+
+    const message =
+      isOperational && error instanceof Error
+        ? error.message
+        : "Analysis failed. Please try again.";
+
     return Response.json({ error: message } satisfies ErrorResponse, {
       status: 500,
     });
@@ -150,6 +166,5 @@ export async function GET() {
       github: hasGitHubToken() ? "configured" : "optional",
     },
   };
-
   return Response.json(response);
 }

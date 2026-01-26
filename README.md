@@ -18,7 +18,7 @@
 
   <br />
 
-  <img src="/public/repo-gist-showcase.png" alt="RepoGist Screenshot" width="750" style="border-radius: 10px;" />
+  <img src="/public/og-image.png" alt="RepoGist Screenshot" width="750" style="border-radius: 10px;" />
 </div>
 
 ---
@@ -688,8 +688,6 @@ Special thanks to these amazing projects:
 
 ### Dev Prasad Sethi
 
-Full Stack Developer • Open Source Enthusiast
-
 [![Twitter](https://img.shields.io/badge/@imsethidev-1DA1F2?style=flat-square&logo=twitter&logoColor=white)](https://x.com/imsethidev)
 [![GitHub](https://img.shields.io/badge/Devsethi3-181717?style=flat-square&logo=github&logoColor=white)](https://github.com/Devsethi3)
 [![Portfolio](https://img.shields.io/badge/Portfolio-000000?style=flat-square&logo=vercel&logoColor=white)](https://devsethi.vercel.app)
@@ -706,9 +704,5 @@ If you find RepoGist useful, please consider giving it a star!
 
 [![Share on Twitter](https://img.shields.io/badge/Twitter-1DA1F2?style=for-the-badge&logo=twitter&logoColor=white)](https://twitter.com/intent/tweet?text=Check%20out%20RepoGist%20-%20AI-powered%20GitHub%20repo%20analyzer!&url=https://repo-gist.vercel.app)
 [![Share on LinkedIn](https://img.shields.io/badge/LinkedIn-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/sharing/share-offsite/?url=https://repo-gist.vercel.app)
-
----
-
-Made with ❤️ and ☕ by [Dev Prasad Sethi](https://github.com/Devsethi3)
 
 </div>

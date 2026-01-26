@@ -273,8 +273,8 @@ function AutomationItem({
                   <Button
                     variant="outline"
                     size="sm"
-                    className="text-xs h-9 flex-1 sm:flex-none"
                     onClick={() => handleCopy()}
+                    className="text-xs font-normal"
                   >
                     {copied ? (
                       <>
@@ -310,8 +310,8 @@ function AutomationItem({
                     <Button
                       size="sm"
                       variant="secondary"
-                      className="text-xs h-9 flex-1 sm:flex-none"
                       asChild
+                      className="text-xs font-normal"
                     >
                       <Link
                         href={`https://github.com/${repoFullName}/new/main?filename=.github/workflows/ci.yml`}
