@@ -18,68 +18,93 @@
 
   <br />
 
-  <img src="/public/og-image.png" alt="RepoGist Screenshot" width="750" style="border-radius: 10px;" />
+<img src="public/og-image.png" alt="Repository Overview" width="750" />
+
+---
+
+### 🔹 Data Flow Diagram
+
+<img src="public/data-flow-diagram.png" alt="Data Flow Diagram" width="750" />
+
+---
+
+### 🔹 PDF Export
+
+<img src="public/pdf.png" alt="PDF Export Screenshot" width="750" />
+
+---
+
+### 🔹 Repository Score & Insights
+
+<img src="public/repo-score.png" alt="Repository Score" width="750" />
+
+--- 
+
+### 🔹 Repository Score Image
+
+<img src="public/repogist-the-algorithm-main.png" alt="Repository Score" width="750" />
+
 </div>
 
 ---
 
-## 📖 About
+## About
 
 **RepoGist** is an open-source tool that leverages AI to analyze GitHub repositories instantly. Whether you're evaluating a new library, onboarding to a codebase, or auditing your own project, RepoGist provides comprehensive insights in seconds.
 
 ### Why RepoGist?
 
-| Benefit                   | Description                                         |
-| ------------------------- | --------------------------------------------------- |
-| ⏱️ **Save Hours**         | Understand any codebase in seconds, not hours       |
-| 🧠 **AI-Powered**         | Intelligent analysis using advanced language models |
-| 📊 **Comprehensive**      | Code quality, security, architecture, and more      |
-| 🌿 **Branch Support**     | Analyze any branch, not just the default            |
-| 🎨 **Beautiful UI**       | Modern, responsive interface with dark mode         |
-| 🔒 **Privacy First**      | No code is stored; analysis happens in real-time    |
-| 🆓 **Free & Open Source** | MIT licensed, community-driven                      |
+| Benefit                | Description                                         |
+| ---------------------- | --------------------------------------------------- |
+| **Save Hours**         | Understand any codebase in seconds, not hours       |
+| **AI-Powered**         | Intelligent analysis using advanced language models |
+| **Comprehensive**      | Code quality, security, architecture, and more      |
+| **Branch Support**     | Analyze any branch, not just the default            |
+| **Beautiful UI**       | Modern, responsive interface with dark mode         |
+| **Privacy First**      | No code is stored; analysis happens in real-time    |
+| **Free & Open Source** | MIT licensed, community-driven                      |
 
 ---
 
-## ✨ Features
+## Features
 
 ### Core Analysis
 
-| Feature                      | Description                                             |
-| ---------------------------- | ------------------------------------------------------- |
-| 📊 **Health Scoring**        | Comprehensive score (0-100) for overall code quality    |
-| 🏗️ **Architecture Analysis** | Visualize component relationships and structure         |
-| 🛡️ **Security Insights**     | Identify potential vulnerabilities and security issues  |
-| 📦 **Dependency Analysis**   | Understand package dependencies and outdated packages   |
-| 🏷️ **Tech Stack Detection**  | Automatically identify frameworks and technologies      |
-| 💡 **AI Recommendations**    | Get actionable improvement suggestions                  |
-| 🌿 **Branch Analysis**       | Analyze any branch in the repository                    |
-| 🔀 **Data Flow Diagrams**    | Interactive Mermaid diagrams showing data flow patterns |
+| Feature                   | Description                                             |
+| ------------------------- | ------------------------------------------------------- |
+| **Health Scoring**        | Comprehensive score (0-100) for overall code quality    |
+| **Architecture Analysis** | Visualize component relationships and structure         |
+| **Security Insights**     | Identify potential vulnerabilities and security issues  |
+| **Dependency Analysis**   | Understand package dependencies and outdated packages   |
+| **Tech Stack Detection**  | Automatically identify frameworks and technologies      |
+| **AI Recommendations**    | Get actionable improvement suggestions                  |
+| **Branch Analysis**       | Analyze any branch in the repository                    |
+| **Data Flow Diagrams**    | Interactive Mermaid diagrams showing data flow patterns |
 
 ### Export & Sharing
 
-| Feature                | Description                                  |
-| ---------------------- | -------------------------------------------- |
-| 📋 **Copy Plain Text** | Copy analysis report as formatted plain text |
-| 📝 **Copy Markdown**   | Copy full report in Markdown format          |
-| 📥 **Download PDF**    | Export detailed PDF report with all insights |
-| 🖼️ **Share Cards**     | Download beautiful share cards as images     |
-| 📤 **Social Sharing**  | Share on Twitter, LinkedIn, or copy link     |
+| Feature             | Description                                  |
+| ------------------- | -------------------------------------------- |
+| **Copy Plain Text** | Copy analysis report as formatted plain text |
+| **Copy Markdown**   | Copy full report in Markdown format          |
+| **Download PDF**    | Export detailed PDF report with all insights |
+| **Share Cards**     | Download beautiful share cards as images     |
+| **Social Sharing**  | Share on Twitter, LinkedIn, or copy link     |
 
 ### User Experience
 
-| Feature                      | Description                                        |
-| ---------------------------- | -------------------------------------------------- |
-| 📁 **Interactive File Tree** | Explore repository structure with file statistics  |
-| 🔄 **Real-time Progress**    | Watch the analysis happen live with status updates |
-| 🌙 **Dark/Light Mode**       | Beautiful themes for any preference                |
-| 📱 **Fully Responsive**      | Works seamlessly on desktop, tablet, and mobile    |
-| ⚡ **Lightning Fast**        | Built with Next.js 16 for optimal performance      |
-| 💾 **Smart Caching**         | Recently analyzed repos load instantly             |
+| Feature                   | Description                                        |
+| ------------------------- | -------------------------------------------------- |
+| **Interactive File Tree** | Explore repository structure with file statistics  |
+| **Real-time Progress**    | Watch the analysis happen live with status updates |
+| **Dark/Light Mode**       | Beautiful themes for any preference                |
+| **Fully Responsive**      | Works seamlessly on desktop, tablet, and mobile    |
+| **Lightning Fast**        | Built with Next.js 16 for optimal performance      |
+| **Smart Caching**         | Recently analyzed repos load instantly             |
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 

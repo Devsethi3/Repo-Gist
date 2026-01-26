@@ -71,7 +71,7 @@ export function ArchitectureDiagram({ components }: ArchitectureDiagramProps) {
   }, [components]);
 
   const activeLayers = layerOrder.filter(
-    (layer) => groupedComponents[layer]?.length > 0
+    (layer) => groupedComponents[layer]?.length > 0,
   );
 
   if (activeLayers.length === 0) {
@@ -149,9 +149,9 @@ export function ArchitectureDiagram({ components }: ArchitectureDiagramProps) {
                           delay: layerIndex * 0.05 + index * 0.02,
                         }}
                         className={cn(
-                          "group p-3 rounded-lg border border-border/50",
+                          "group p-3 rounded-lg border border-border/50 w-fit max-w-75",
                           "bg-muted/20 hover:bg-muted/40",
-                          "transition-colors cursor-default"
+                          "transition-colors cursor-default",
                         )}
                       >
                         {/* Component Name */}
@@ -172,7 +172,7 @@ export function ArchitectureDiagram({ components }: ArchitectureDiagramProps) {
                               className={cn(
                                 "text-[10px] font-medium px-1.5 py-0.5 rounded",
                                 "bg-background border border-border/50",
-                                "text-muted-foreground"
+                                "text-muted-foreground",
                               )}
                             >
                               {tech}

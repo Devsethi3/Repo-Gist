@@ -516,7 +516,7 @@ ${description}
               htmlFor="labels"
               className="font-normal text-muted-foreground"
             >
-              Additional Labels (comma separated)
+              Labels (comma separated)
             </Label>
             <Input
               id="labels"
