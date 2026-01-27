@@ -1,9 +1,7 @@
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { EnvConfig } from "./types";
 
-export const MODEL_ID = "xiaomi/mimo-v2-flash:free";
-// export const MODEL_ID = "mistralai/devstral-2512:free";
-// deepseek/deepseek-r1-0528:free
+export const MODEL_ID = "deepseek/deepseek-r1-0528:free";
 
 export const AI_CONFIG = {
   temperature: 0.7,
